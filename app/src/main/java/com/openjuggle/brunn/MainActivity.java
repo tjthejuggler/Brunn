@@ -3,6 +3,7 @@ package com.openjuggle.brunn;
 
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -11,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -19,9 +21,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.app.Activity;
@@ -29,11 +33,14 @@ import android.content.Intent;
 import android.os.CountDownTimer;
 import android.os.Handler;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.ListView;
@@ -43,19 +50,19 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.widget.MultiAutoCompleteTextView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener {
 
+    DatabaseHelper myDb;
+    String dbName = "brunn.db";
+
+    OpenDialogHelper myODH;
+
     public ListView mList;
-
-    ToggleButton sessionbutton;
-
-
-    //final Button catchbutton = findViewById(R.id.catchbutton);
-
 
     private Timer timer;
     private TextView timertext;
@@ -70,26 +77,46 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     public int starttimeoflastrun = 0;
 
+    private TextView proptextview;
+    private TextView patterntextview;
+    private TextView modifiertextview;
+    List<String> listofprops = new ArrayList<>();
+    List<String> listofpatterns = new ArrayList<>();
+    List<String> listofmodifiers = new ArrayList<>();
+
     public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
 
     private ListView runslistview;
     private ArrayAdapter<String> runslistviewadapter;
     private ArrayList<String> runsarraylist;
 
-    String myfilename = "userslongsiteswaplist.txt";
+    Handler volumechecker = new Handler();
+    int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
+    Runnable runnable;
+
+    String userslongsiteswaplist = "userslongsiteswaplist.txt";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        proptextview = findViewById(R.id.proptextview);
+        patterntextview = findViewById(R.id.patterntextview);
+        modifiertextview = findViewById(R.id.modifiertextview);
+        listofprops.add("balls");
+        listofprops.add("bounce");
+        listofprops.add("clubs");
+        listofprops.add("beanbags");
+        listofpatterns.add("3");
+        listofpatterns.add("411");
+        listofmodifiers.add("bc");
+        listofmodifiers.add("fbal");
+        onCreateDatabase();
         setCurrentVolume();
-
         timertext = findViewById(R.id.timertext);
-
         Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
 
+        setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,6 +127,108 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 Read();
             }
         });
+        final Button propbutton = findViewById(R.id.propbutton);
+        propbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view2) {
+                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_prop_dialog, null);
+                final AutoCompleteTextView choosepropdialogactv = view.findViewById(R.id.propinputactv);
+                ArrayAdapter<String> choosepropdialogactvAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofprops);
+                choosepropdialogactv.setAdapter(choosepropdialogactvAdapter);
+                choosepropdialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choosepropdialogactv.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        choosepropdialogactv.showDropDown();
+                    }
+                });
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+            alertBuilder.setView(view);
+            alertBuilder.setCancelable(true)
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                             proptextview.setText(choosepropdialogactv.getText());
+                        }
+                    });
+
+                final Dialog dialog = alertBuilder.create();
+            dialog.show();
+            dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
+                    Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+            }
+        });
+
+        final Button patternbutton = findViewById(R.id.patternbutton);
+        patternbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view2) {
+                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
+                final AutoCompleteTextView choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
+                ArrayAdapter<String> choosepatterndialogactvAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofpatterns);
+                choosepatterndialogactv.setAdapter(choosepatterndialogactvAdapter);
+                choosepatterndialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choosepatterndialogactv.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        choosepatterndialogactv.showDropDown();
+                    }
+                });
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+                alertBuilder.setView(view);
+                alertBuilder.setCancelable(true)
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                patterntextview.setText(choosepatterndialogactv.getText());
+                            }
+                        });
+
+                final Dialog dialog = alertBuilder.create();
+                dialog.show();
+                dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
+                        Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+            }
+        });
+
+        final Button modifierbutton = findViewById(R.id.modifierbutton);
+        modifierbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view2) {
+                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_modifier_dialog, null);
+                final MultiAutoCompleteTextView choosemodifierdialogactv = view.findViewById(R.id.modifierinputmactv);
+                ArrayAdapter<String> choosemodifierdialogactvAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofmodifiers);
+                choosemodifierdialogactv.setAdapter(choosemodifierdialogactvAdapter);
+                choosemodifierdialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choosemodifierdialogactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+
+                choosemodifierdialogactv.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        choosemodifierdialogactv.showDropDown();
+                    }
+                });
+
+
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+                alertBuilder.setView(view);
+                alertBuilder.setCancelable(true)
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                modifiertextview.setText(choosemodifierdialogactv.getText());
+                            }
+                        });
+
+                final Dialog dialog = alertBuilder.create();
+                dialog.show();
+                dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
+                        Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+            }
+        });
 
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
@@ -107,50 +236,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
-
         runslistview = (ListView) findViewById(R.id.runslistview);
         runsarraylist = new ArrayList<String>();
-
         runslistviewadapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item, runsarraylist);
         runslistview.setAdapter(runslistviewadapter);
-
-        try {
-            FileOutputStream fileos = openFileOutput(myfilename, Context.MODE_PRIVATE);
-        } catch (
-                FileNotFoundException ex) {
-            Toast.makeText(MainActivity.this, "beginrun()", Toast.LENGTH_SHORT).show();
-        }
-
-        try {
-            // Create a new file input stream.
-            FileInputStream fileis = openFileInput(myfilename);
-        } catch (
-                FileNotFoundException ex) {
-            Toast.makeText(MainActivity.this, "beginrun()", Toast.LENGTH_SHORT).show();
-        }
-
-
-
-
         startbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 if (!inRun) {
                     beginrun();
-
-
                 }
             }
         });
-
-
-
-
         catchbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 if (inRun) {
                     endrun("catch");
                 }
@@ -165,16 +265,26 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         });
     }
-
-
-    Handler volumechecker = new Handler();
-    int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
-    Runnable runnable;
-
+    public void addDataToDB(String table, String col, String textToAdd) {
+        //this calls up 'insertData' from DatabaseHelper and inserts the user provided add
+        //      the EditTexts from above which were taken from our Layout
+        boolean isInserted = myDb.insertData(table, col, textToAdd);
+    }
+    public void onCreateDatabase(){
+        File file = this.getDatabasePath(dbName);
+        if (!file.exists()) {
+            Log.d("didntexist", "5");
+            //if the database doesn't currently exist, then this is the first time the app has been run and we need to add
+            //      the stuff to the database to make the default settings
+            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
+            //addFirstTimeRunDatabaseData();
+        } else {
+            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
+        }
+    }
     @Override
     protected void onResume() {
         // start handler as activity become visible
-
         volumechecker.postDelayed( runnable = new Runnable() {
             public void run() {
                     Boolean volumeWentDown = false;
@@ -186,7 +296,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     if (currentVolume < audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
                         volumeWentUp = true;
                     }
-
                     if (!inRun){
                         if (volumeWentDown || volumeWentUp){
                             beginrun();
@@ -198,49 +307,34 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         if (volumeWentUp){
                             endrun("catch");
                         }
-
-
-
-
-
                 }
                 volumechecker.postDelayed(runnable, delay);
             }
         }, delay);
-
         super.onResume();
     }
-
     @Override
     protected void onPause() {
         volumechecker.removeCallbacks(runnable); //stop handler when activity not visible
         super.onPause();
     }
-
     public void setCurrentVolume(){
         AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
     }
-
     public void beginrun(){
-
         Toast.makeText(MainActivity.this, "beginrun()", Toast.LENGTH_SHORT).show();
-
         long tsLong = System.currentTimeMillis()/1000;
         starttimeoflastrun = (int)tsLong;
-
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
         startbutton.setVisibility(View.GONE);
         dropbutton.setVisibility(View.VISIBLE);
         catchbutton.setVisibility(View.VISIBLE);
-
         startTimer();
         inRun = true;
-
         setCurrentVolume();
-
     }
 
     public void endrun(String endtype){
@@ -441,7 +535,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 /*
 TODO
--get git working
 -next up stuff
     -make prop custom dialog (copy from what formic does)
     -copy formics db functionality (get that whole helper class in here)
@@ -577,5 +670,8 @@ TODO
 
         Eventually:
         The + sign could give option to make a new set or to start a new AI session that asks for desires and then suggests sets
+
+
+
 */
 
