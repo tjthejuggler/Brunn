@@ -441,6 +441,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 /*
 TODO
+-get git working
 -next up stuff
     -make prop custom dialog (copy from what formic does)
     -copy formics db functionality (get that whole helper class in here)
