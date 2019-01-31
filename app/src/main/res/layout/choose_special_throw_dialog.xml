@@ -7,14 +7,14 @@ android:gravity="top">
 
 
         <TextView
-            android:id="@+id/modifierinputtv"
+            android:id="@+id/specialthrowinputtv"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="Modifier:"
+            android:text="Special throw:"
             android:textSize="30sp" />
 
         <MultiAutoCompleteTextView
-            android:id="@+id/modifierinputmactv"
+            android:id="@+id/specialthrowinputmactv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 

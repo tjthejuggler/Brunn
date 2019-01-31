@@ -38,7 +38,7 @@
         android:layout_marginTop="8dp"
         android:text="START"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/modifierbutton" />
+        app:layout_constraintTop_toBottomOf="@+id/specialthrowbutton" />
 
     <Button
         android:id="@+id/catchbutton"
@@ -80,6 +80,17 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/patternbutton" />
 
+    <Button
+        android:id="@+id/specialthrowbutton"
+        android:layout_width="64dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:text="ST"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/modifierbutton" />
+
     <TextView
         android:id="@+id/patterntextview"
         android:layout_width="wrap_content"
@@ -101,6 +112,17 @@
         android:text="default.modifiertextview.text"
         app:layout_constraintStart_toEndOf="@+id/modifierbutton"
         app:layout_constraintTop_toTopOf="@+id/modifierbutton" />
+
+    <TextView
+        android:id="@+id/specialthrowtextview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginTop="8dp"
+        android:text="default.special.throwtextview.text"
+        app:layout_constraintStart_toEndOf="@+id/specialthrowbutton"
+        app:layout_constraintTop_toTopOf="@+id/specialthrowbutton" />
 
     <Button
         android:id="@+id/propbutton"

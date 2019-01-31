@@ -20,6 +20,8 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -40,6 +42,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -52,6 +55,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.MultiAutoCompleteTextView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
@@ -59,6 +63,7 @@ import android.widget.ToggleButton;
 public class MainActivity extends AppCompatActivity implements OnClickListener {
     DatabaseHelper myDb;
     String dbName = "brunn.db";
+    AutoCompleteTextView choosepatterndialogactv;
     public ListView mList;
     private Timer timer;
     private TextView timertext;
@@ -69,9 +74,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private TextView proptextview;
     private TextView patterntextview;
     private TextView modifiertextview;
+    private TextView specialthrowtextview;
     List<String> listofprops = new ArrayList<>();
+    List<Integer> listofnumbers = new ArrayList<>();
     List<String> listofpatterns = new ArrayList<>();
     List<String> listofmodifiers = new ArrayList<>();
+    List<String> listofspecialthrows = new ArrayList<>();
     public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
     private ListView runslistview;
     private ArrayAdapter<String> runslistviewadapter;
@@ -87,8 +95,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         proptextview = findViewById(R.id.proptextview);
         patterntextview = findViewById(R.id.patterntextview);
         modifiertextview = findViewById(R.id.modifiertextview);
-        if(firstrun()){
-            doFirstRunStuff();
+        specialthrowtextview = findViewById(R.id.specialthrowtextview);
+        if(firstuse()){
+            Toast.makeText(getBaseContext(), "firstuse", Toast.LENGTH_SHORT).show();
+            doFirstUseStuff();
         }
         fillListsFromTextFiles();
         onCreateDatabase();
@@ -100,10 +110,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getBaseContext(), "mailbutton",
-                        Toast.LENGTH_SHORT).show();
-                doFirstRunStuff();
-                Read();
+                Toast.makeText(getBaseContext(), "fab", Toast.LENGTH_SHORT).show();
+                //doFirstRunStuff();
+                writeToTextFile("patternlist","mytest");
+                fillListsFromTextFiles();
+                //Read();
             }
         });
         final Button propbutton = findViewById(R.id.propbutton);
@@ -116,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofprops);
                 choosepropdialogactv.setAdapter(choosepropdialogactvAdapter);
                 choosepropdialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choosepropdialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
                 choosepropdialogactv.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -128,7 +140,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                             proptextview.setText(choosepropdialogactv.getText());
+                            String userInput = choosepropdialogactv.getText().toString();
+                            proptextview.setText(userInput);
+                            if (!listofprops.contains(userInput)){
+                                writeToTextFile("proplist",userInput);
+                                fillListFromTextFile("proplist",listofprops);
+                            }
                         }
                     });
                 final Dialog dialog = alertBuilder.create();
@@ -141,16 +158,50 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         patternbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view2) {
-                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
-                final AutoCompleteTextView choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
+                Toast.makeText(getBaseContext(), "patternButtonClicked",Toast.LENGTH_SHORT).show();
+                final View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
+                choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
                 ArrayAdapter<String> choosepatterndialogactvAdapter =
                         new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofpatterns);
                 choosepatterndialogactv.setAdapter(choosepatterndialogactvAdapter);
                 choosepatterndialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choosepatterndialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
                 choosepatterndialogactv.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         choosepatterndialogactv.showDropDown();
+                    }
+                });
+                final Spinner choosenumberdialogspinner = view.findViewById(R.id.numberspinner);
+                ArrayAdapter<Integer> choosenumberdialogspinnerAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofnumbers);
+                choosenumberdialogspinner.setAdapter(choosenumberdialogspinnerAdapter);
+                choosenumberdialogspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view2, int position, long id) {
+                        Toast.makeText(getBaseContext(), "spinnerItemSelected",Toast.LENGTH_SHORT).show();
+
+                        removeSiteswapsOfOtherNumbers(4);
+                        Toast.makeText(getBaseContext(), listofpatterns.toString(),Toast.LENGTH_SHORT).show();
+                        //listofpatterns.remove(listofpatterns);
+                        //View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
+                        choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
+                        ArrayAdapter<String> adapter =
+                                new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofpatterns);
+                        choosepatterndialogactv.setAdapter(adapter);
+                        choosepatterndialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                        choosepatterndialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                        choosepatterndialogactv.setOnClickListener(new OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                choosepatterndialogactv.showDropDown();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+
                     }
                 });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
@@ -159,13 +210,18 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                patterntextview.setText(choosepatterndialogactv.getText());
+                                String userInput = choosepatterndialogactv.getText().toString();
+                                patterntextview.setText(userInput);
+                                if (!listofpatterns.contains(userInput)){
+                                    writeToTextFile("patternlist",userInput);
+                                    fillListFromTextFile("patternlist",listofpatterns);
+                                }
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
                 dialog.show();
                 dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
-                        Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+                        Resources.getSystem().getDisplayMetrics().heightPixels / 2);
             }
         });
         final Button modifierbutton = findViewById(R.id.modifierbutton);
@@ -179,6 +235,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 choosemodifierdialogactv.setAdapter(choosemodifierdialogactvAdapter);
                 choosemodifierdialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 choosemodifierdialogactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+                choosemodifierdialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
 
                 choosemodifierdialogactv.setOnClickListener(new OnClickListener() {
                     @Override
@@ -192,7 +249,50 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                modifiertextview.setText(choosemodifierdialogactv.getText());
+                                String userInput = choosemodifierdialogactv.getText().toString();
+                                modifiertextview.setText(userInput);
+                                if (!listofmodifiers.contains(userInput)){
+                                    writeToTextFile("modifierlist",userInput);
+                                    fillListFromTextFile("modifierlist",listofmodifiers);
+                                }
+                            }
+                        });
+                final Dialog dialog = alertBuilder.create();
+                dialog.show();
+                dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
+                        Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+            }
+        });
+        final Button specialthrowbutton = findViewById(R.id.specialthrowbutton);
+        specialthrowbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view2) {
+                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_special_throw_dialog, null);
+                final MultiAutoCompleteTextView choosespecialthrowdialogmactv = view.findViewById(R.id.specialthrowinputmactv);
+                ArrayAdapter<String> choosespecialthrowdialogactvAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofspecialthrows);
+                choosespecialthrowdialogmactv.setAdapter(choosespecialthrowdialogactvAdapter);
+                choosespecialthrowdialogmactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choosespecialthrowdialogmactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+                choosespecialthrowdialogmactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                choosespecialthrowdialogmactv.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        choosespecialthrowdialogmactv.showDropDown();
+                    }
+                });
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+                alertBuilder.setView(view);
+                alertBuilder.setCancelable(true)
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                String userInput = choosespecialthrowdialogmactv.getText().toString();
+                                specialthrowtextview.setText(userInput);
+                                if (!listofspecialthrows.contains(userInput)){
+                                    writeToTextFile("specialthrowlist",userInput);
+                                    fillListFromTextFile("specialthrowlist",listofspecialthrows);
+                                }
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
@@ -236,29 +336,57 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         });
     }
-    public boolean firstrun(){
-
-
-        //String fileUrl = "/res/raw/patternslist.txt";
-        //String file = android.os.Environment.getExternalStorageDirectory().getPath() + fileUrl;
-        File f = new File("patternslist.txt");
-
-        if(f.exists()) {
-
-            return false;
-        }else{
-            return true;
+    public boolean firstuse(){
+        Boolean toReturn = false;
+        try {
+            FileInputStream fileIn=openFileInput("patternlist.txt");
+        } catch (Exception e) {
+            e.printStackTrace();
+            toReturn = true;
         }
+        return toReturn;
     }
-    public void doFirstRunStuff(){
+    public void removeSiteswapsOfOtherNumbers(int objectNumber){
+        listofpatterns.remove(listofpatterns);
+        fillListFromTextFile("patternlist",listofpatterns);
+        List<Object> toRemove = new ArrayList<Object>();
+        for (String pattern : listofpatterns){
+            if (pattern.matches("[0-9]+") && pattern.length()<8){
+                int originalnum = Integer.parseInt(pattern);
+                int numberOfDigits = pattern.length();
+                int num = originalnum;
+                int sum = 0;
+                while (num > 0) {
+                    sum = sum + num % 10;
+                    num = num / 10;
+                }
+                int numberOfObjectsInThisSIteswap = sum/numberOfDigits;
+                if (objectNumber != numberOfObjectsInThisSIteswap){
+                    toRemove.add(pattern);
+                }
+            }
+        }
+
+        listofpatterns.remove(toRemove);
+        //Toast.makeText(getBaseContext(), listofpatterns.toString(),Toast.LENGTH_SHORT).show();
+    }
+
+    public void doFirstUseStuff(){
         resetuserslistfromtemplate("proplist");
         resetuserslistfromtemplate("patternlist");
         resetuserslistfromtemplate("modifierlist");
+        resetuserslistfromtemplate("specialthrowlist");
+        fillListsFromTextFiles();
     }
     public void fillListsFromTextFiles(){
         fillListFromTextFile("proplist",listofprops);
+        listofnumbers.clear();
+        for (int i = 1; i <= 13; i++) {
+            listofnumbers.add(i);
+        }
         fillListFromTextFile("patternlist",listofpatterns);
         fillListFromTextFile("modifierlist",listofmodifiers);
+        fillListFromTextFile("specialthrowlist",listofspecialthrows);
     }
     public void fillListFromTextFile(String textFileName,List<String> list){
             final int READ_BLOCK_SIZE = 100;
@@ -276,17 +404,24 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 InputRead.close();
                 if (textFileName == "proplist"){
                     String[] stringsofprops = s.split("\\r?\\n");
-                    listofprops = new ArrayList<>(Arrays.asList(stringsofprops));
+                    listofprops = Arrays.asList(stringsofprops);
+                    listofprops.removeAll(Arrays.asList("", null));
                 }
                 if (textFileName == "patternlist"){
                     String[] stringsofpatterns = s.split("\\r?\\n");
-                    listofpatterns = new ArrayList<>(Arrays.asList(stringsofpatterns));
+                    listofpatterns = Arrays.asList(stringsofpatterns);
+                    listofpatterns.removeAll(Arrays.asList("", null));
                 }
                 if (textFileName == "modifierlist"){
                     String[] stringsofmodifiers = s.split("\\r?\\n");
-                    listofmodifiers = new ArrayList<>(Arrays.asList(stringsofmodifiers));
+                    listofmodifiers = Arrays.asList(stringsofmodifiers);
+                    listofmodifiers.removeAll(Arrays.asList("", null));
                 }
-
+                if (textFileName == "specialthrowlist"){
+                    String[] stringsofspecialthrows = s.split("\\r?\\n");
+                    listofspecialthrows = Arrays.asList(stringsofspecialthrows);
+                    listofspecialthrows.removeAll(Arrays.asList("", null));
+                }
                 Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -435,6 +570,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Toast.makeText(getBaseContext(), "settings clicked",Toast.LENGTH_SHORT).show();
+            doFirstUseStuff();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -495,11 +632,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             e.printStackTrace();
         }
     }
-    public void Write(){
+    public void writeToTextFile(String listfile, String stringtoadd){
         try {
-            FileOutputStream fileout=openFileOutput("patternlist.txt", MODE_PRIVATE);
+            FileOutputStream fileout=openFileOutput(listfile+".txt",MODE_PRIVATE | MODE_APPEND);
             OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
-            outputWriter.write("TEST STRING2..");
+            outputWriter.write("\n"+stringtoadd);
             outputWriter.close();
 
             //display file saved message
@@ -516,12 +653,19 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 /*
 TODO
+-TO MAKE DB:
+    -once all dialogs are complete, then do this
+    -when a run begins, check in db that columns exist for each
+-when making lists from txt file, probably want to use that remove duplicates function from formic
+-design the inputs for pattern and modifiers. Probably both some kind of alertdialog popup.
+    -PATTERN. it should be filterable by number of objects.
+    -SPECIAL THROWS. needs an edittext for sequence input if applicable
+    -in these there should be a filter, one thing to filter is 'patterns(or modifiers) with history with currently selected modifiers(or patterns)'
+-move phone brunn phone notes over here
+-organize these notes
 -next up stuff
-    -make new props that are typed in by the user get saved to a txt file and use that txt file to populate the list of props
-        -we need a txt file for each of the 3, prop, pattern, modifier
-    -copy formics db functionality (get that whole helper class in here)
-        -see if db stuff is working
-        -make import/export db stuff in settings
+    -see if db stuff is working
+    -make import/export db stuff in settings
     -see if anything we have now can be turned into its own class by modelling off of formics database helper(once its in here)
 -when to update the db:
     -if a few minutes pass of no runs
@@ -532,15 +676,6 @@ TODO
     -ai coach(recommends patterns)
     -set by user in settings
 -a sound played when a run starts would get rid of the problem of runs accidentally being started and stopped in the background
--move all the runs into the .db
--design the inputs for pattern and modifiers. Probably both some kind of alertdialog popup.
-    -PROP. probably the simplest,
-        -user can type in a prop, if it is new it gets added to the autocompletetextview
-    -PATTERN. it should be filterable by number of objects.
-        -probably want to use that remove duplicates function from formic
-    -MODIFIERS. maybe filterable by type of object
-    -in these there should be a filter, one thing to filter is 'patterns(or modifiers) with history with currently selected modifiers(or patterns)'
--maybe change the word 'session' out for 'set'
 -once db is installed:
     -show records at beginning of list, and also show all the history(but make records obvious), use dates by each duration
     -make easy way to input records in the past
@@ -553,6 +688,9 @@ TODO
     -make graphs of progress
     -use calendar view to go back in time(maybe this could also be used to add past runs
     -an automatic throw count estimator for patterns that have had both time and throw data given
+-Things I don't understand
+    -private/public variables
+    -static
 
 
 ------MOST IMPORTANT REQUIREMENTS-------------

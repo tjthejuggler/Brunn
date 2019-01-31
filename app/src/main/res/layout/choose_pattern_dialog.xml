@@ -5,19 +5,30 @@ android:layout_height="match_parent"
 android:gravity="top">
 
 
+    <TextView
+        android:id="@+id/numberspinnertv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Number of objects:"
+        android:textSize="30sp" />
 
-        <TextView
-            android:id="@+id/patterninputtv"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Pattern type:"
-            android:textSize="30sp" />
+    <Spinner
+        android:id="@+id/numberspinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
-        <AutoCompleteTextView
-            android:id="@+id/patterninputactv"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+    <TextView
+        android:id="@+id/patterninputtv"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Siteswap/Name:"
+        android:textSize="30sp" />
+
+    <AutoCompleteTextView
+        android:id="@+id/patterninputactv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 
-    </LinearLayout>
+</LinearLayout>
 
