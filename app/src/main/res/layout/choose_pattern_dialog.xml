@@ -29,6 +29,12 @@ android:gravity="top">
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
+    <CheckBox
+        android:id="@+id/onlyPatternsWithHistoryCB"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Only show patterns with history" />
+
 
 </LinearLayout>
 

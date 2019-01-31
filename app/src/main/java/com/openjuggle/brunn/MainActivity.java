@@ -13,6 +13,8 @@ import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
@@ -75,11 +77,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private TextView patterntextview;
     private TextView modifiertextview;
     private TextView specialthrowtextview;
-    List<String> listofprops = new ArrayList<>();
-    List<Integer> listofnumbers = new ArrayList<>();
-    List<String> listofpatterns = new ArrayList<>();
-    List<String> listofmodifiers = new ArrayList<>();
-    List<String> listofspecialthrows = new ArrayList<>();
+    List<String> listofprops = new LinkedList<>();
+    List<Integer> listofnumbers = new LinkedList<>();
+    List<String> listofpatterns = new LinkedList<>();
+    List<String> listofmodifiers = new LinkedList<>();
+    List<String> listofspecialthrows = new LinkedList<>();
     public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
     private ListView runslistview;
     private ArrayAdapter<String> runslistviewadapter;
@@ -158,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         patternbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view2) {
-                Toast.makeText(getBaseContext(), "patternButtonClicked",Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getBaseContext(), "patternButtonClicked",Toast.LENGTH_SHORT).show();
                 final View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
                 choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
                 ArrayAdapter<String> choosepatterndialogactvAdapter =
@@ -179,12 +181,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 choosenumberdialogspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view2, int position, long id) {
-                        Toast.makeText(getBaseContext(), "spinnerItemSelected",Toast.LENGTH_SHORT).show();
-
-                        removeSiteswapsOfOtherNumbers(4);
-                        Toast.makeText(getBaseContext(), listofpatterns.toString(),Toast.LENGTH_SHORT).show();
-                        //listofpatterns.remove(listofpatterns);
-                        //View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
+                        //Toast.makeText(getBaseContext(), "spinnerItemSelected",Toast.LENGTH_SHORT).show();
+                        removeSiteswapsOfOtherNumbers(position+1);
+                        //Toast.makeText(getBaseContext(), "listofpatterns.size"+listofpatterns.size(),Toast.LENGTH_SHORT).show();
+                        Collections.sort(listofpatterns);
                         choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
                         ArrayAdapter<String> adapter =
                                 new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofpatterns);
@@ -347,9 +347,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         return toReturn;
     }
     public void removeSiteswapsOfOtherNumbers(int objectNumber){
-        listofpatterns.remove(listofpatterns);
+        //listofpatterns.clear();
+        Log.d("TAG", "listofpatterns.size"+listofpatterns.size());
         fillListFromTextFile("patternlist",listofpatterns);
-        List<Object> toRemove = new ArrayList<Object>();
+        List<String> toRemove = new ArrayList<>();
         for (String pattern : listofpatterns){
             if (pattern.matches("[0-9]+") && pattern.length()<8){
                 int originalnum = Integer.parseInt(pattern);
@@ -360,16 +361,22 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     sum = sum + num % 10;
                     num = num / 10;
                 }
-                int numberOfObjectsInThisSIteswap = sum/numberOfDigits;
-                if (objectNumber != numberOfObjectsInThisSIteswap){
+                int numberOfObjectsInThisSiteswap = sum/numberOfDigits;
+
+                if (objectNumber != numberOfObjectsInThisSiteswap){
                     toRemove.add(pattern);
                 }
             }
         }
-
-        listofpatterns.remove(toRemove);
-        //Toast.makeText(getBaseContext(), listofpatterns.toString(),Toast.LENGTH_SHORT).show();
+        for (String itemToRemove : toRemove) {
+            Log.d("TAG", "itemToRemove."+itemToRemove);
+            //Toast.makeText(getBaseContext(), "itemToRemove."+itemToRemove,Toast.LENGTH_SHORT).show();
+            if (listofpatterns.contains(itemToRemove)) {
+                listofpatterns.remove(itemToRemove);
+            }
+        }
     }
+
 
     public void doFirstUseStuff(){
         resetuserslistfromtemplate("proplist");
@@ -390,7 +397,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
     public void fillListFromTextFile(String textFileName,List<String> list){
             final int READ_BLOCK_SIZE = 100;
+        Log.d("mine", "1 ");
             try {
+                Log.d("mine", "2 ");
                 FileInputStream fileIn=openFileInput(textFileName+".txt");
                 InputStreamReader InputRead= new InputStreamReader(fileIn);
                 char[] inputBuffer= new char[READ_BLOCK_SIZE];
@@ -404,25 +413,29 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 InputRead.close();
                 if (textFileName == "proplist"){
                     String[] stringsofprops = s.split("\\r?\\n");
-                    listofprops = Arrays.asList(stringsofprops);
+                    listofprops = new LinkedList<>(Arrays.asList(stringsofprops));
                     listofprops.removeAll(Arrays.asList("", null));
                 }
                 if (textFileName == "patternlist"){
+                    Log.d("mine", "3 ");
                     String[] stringsofpatterns = s.split("\\r?\\n");
-                    listofpatterns = Arrays.asList(stringsofpatterns);
+                    listofpatterns = new LinkedList<>(Arrays.asList(stringsofpatterns));
                     listofpatterns.removeAll(Arrays.asList("", null));
+                    Log.d("mine", "listofpatterns.sizzze "+listofpatterns.size());
+
                 }
                 if (textFileName == "modifierlist"){
                     String[] stringsofmodifiers = s.split("\\r?\\n");
-                    listofmodifiers = Arrays.asList(stringsofmodifiers);
+                    listofmodifiers = new LinkedList<>(Arrays.asList(stringsofmodifiers));
                     listofmodifiers.removeAll(Arrays.asList("", null));
                 }
                 if (textFileName == "specialthrowlist"){
                     String[] stringsofspecialthrows = s.split("\\r?\\n");
                     listofspecialthrows = Arrays.asList(stringsofspecialthrows);
+                    listofspecialthrows = new LinkedList<>(Arrays.asList(stringsofspecialthrows));
                     listofspecialthrows.removeAll(Arrays.asList("", null));
                 }
-                Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -486,7 +499,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
     }
     public void beginrun(){
-        Toast.makeText(MainActivity.this, "beginrun()", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(MainActivity.this, "beginrun()", Toast.LENGTH_SHORT).show();
         long tsLong = System.currentTimeMillis()/1000;
         starttimeoflastrun = (int)tsLong;
         final Button startbutton = findViewById(R.id.startbutton);
@@ -500,8 +513,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         setCurrentVolume();
     }
     public void endrun(String endtype){
-        Toast.makeText(MainActivity.this,
-                "endrun("+endtype+")", Toast.LENGTH_LONG).show();
+        //Toast.makeText(MainActivity.this,
+        //        "endrun("+endtype+")", Toast.LENGTH_LONG).show();
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
@@ -570,7 +583,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Toast.makeText(getBaseContext(), "settings clicked",Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), "doFirstUseStuff()",Toast.LENGTH_SHORT).show();
             doFirstUseStuff();
             return true;
         }
@@ -599,7 +612,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 s +=readstring;
             }
             InputRead.close();
-            Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -625,8 +638,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             outputWriter.write(s);
             outputWriter.close();
             //display file saved message
-            Toast.makeText(getBaseContext(), "File saved successfully!",
-                    Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getBaseContext(), "File saved successfully!",Toast.LENGTH_SHORT).show();
             //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -640,8 +652,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             outputWriter.close();
 
             //display file saved message
-            Toast.makeText(getBaseContext(), "File saved successfully!",
-                    Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getBaseContext(), "File saved successfully!",Toast.LENGTH_SHORT).show();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -653,6 +664,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 /*
 TODO
+-NEXT:
+    -remove duplicates from pattern list
+    -make other unique aspects of modifiers, special throws, patterns(if anything left, seenotes)
+    -copy phone notes over to here
+    -find out how to use classes!
 -TO MAKE DB:
     -once all dialogs are complete, then do this
     -when a run begins, check in db that columns exist for each
