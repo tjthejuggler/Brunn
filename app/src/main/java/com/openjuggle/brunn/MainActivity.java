@@ -24,6 +24,7 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -95,11 +96,53 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
     Runnable runnable;
     String userslongsiteswaplist = "userslongsiteswaplist.txt";
+    private float x1,x2;
+    static final int MIN_DISTANCE = 150;
+    private int propTextViewCycleIndex = 0;
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         proptextview = findViewById(R.id.proptextview);
+        proptextview.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d("TAG", "onTouch");
+                if(event.getAction() == MotionEvent.ACTION_DOWN) {
+                    Log.d("TAG", "ACTION_DOWN");
+                    x1 = event.getX();
+                }else if(event.getAction() == MotionEvent.ACTION_UP) {
+                    Log.d("TAG", "ACTION_UP");
+                    x2 = event.getX();
+                    float deltaX = x2 - x1;
+                    Log.d("TAG", Float.toString(deltaX));
+                    if (deltaX > MIN_DISTANCE)
+                    {
+                        propTextViewCycleIndex++;
+                        if (propTextViewCycleIndex==listofprops.size()){
+                            propTextViewCycleIndex = 0;
+                        }
+                        //Toast.makeText(MainActivity.this, "left2right swipe", Toast.LENGTH_SHORT).show ();
+                        proptextview.setText(listofprops.get(propTextViewCycleIndex));
+                    }
+                    if (deltaX < -MIN_DISTANCE)
+                    {
+                        propTextViewCycleIndex--;
+                        if (propTextViewCycleIndex<0){
+                            propTextViewCycleIndex = listofprops.size()-1;
+                        }
+                        //Toast.makeText(MainActivity.this, "left2right swipe", Toast.LENGTH_SHORT).show ();
+                        proptextview.setText(listofprops.get(propTextViewCycleIndex));
+                    }
+                    else
+                    {
+                        // consider as something else - a screen tap for example
+                    }
+
+                }
+                return true;
+            }
+        });
         patterntextview = findViewById(R.id.patterntextview);
         modifiertextview = findViewById(R.id.modifiertextview);
         specialthrowtextview = findViewById(R.id.specialthrowtextview);
@@ -484,12 +527,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     String[] stringsofpatterns = s.split("\\r?\\n");
                     listofpatterns = removeDuplicates(stringsofpatterns);
                     Log.d("mine", "listofpatterns.sizzze "+listofpatterns.size());
-
                 }
                 if (textFileName == "modifierlist"){
                     String[] stringsofmodifiers = s.split("\\r?\\n");
                     listofmodifiers = removeDuplicates(stringsofmodifiers);
-
                 }
                 if (textFileName == "specialthrowlist"){
                     String[] stringsofspecialthrows = s.split("\\r?\\n");
@@ -517,7 +558,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         listWithNulls = new LinkedList<>(Arrays.asList(arrayToRemoveDuplicatesFrom));
         LinkedList<String> listToReturn = new LinkedList<>();
         for(String data: listWithNulls) {
-            if(data != null && data != "") {
+            if(data != null) {
+                if (Pattern.compile( "[0-9]" ).matcher( data ).find() || Pattern.compile( "[a-zA-Z]" ).matcher( data ).find())
                 listToReturn.add(data);
             }
         }
@@ -743,8 +785,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
 TODO
 -NEXT:
-    -get rid of any blanks showing in autocompletetextviews
-    -find out how to use classes!
+    -move some stuff into a new class, whatever it takes, we gotta be organized!!
 -TO MAKE DB:
     -once all dialogs are complete, then do this
     -when a run begins, check in db that columns exist for each
@@ -774,6 +815,12 @@ TODO
     -make sounds? set sounds?
     -make import/export db stuff
 -eventually
+    -make letters work for siteswaps
+    -there can be an 'only show patterns/modifiers without history checkbox
+    -swipping on number instead of it being a spinner(in the pattern dialog)
+    -swipping on pattern/mod/st could automatically go through whatever list is currently
+            set in the dialog. THIS MEANS THAT WE NEED TO KEEP TRACK OF EVERYTHING THAT IS CURRENTLY SET
+            IN DIALOGS. We should autoload that stuff into dialogs when they open.
     -make graphs of progress
     -use calendar view to go back in time(maybe this could also be used to add past runs
     -an automatic throw count estimator for patterns that have had both time and throw data given
