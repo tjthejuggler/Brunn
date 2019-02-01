@@ -14,9 +14,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
@@ -395,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         fillListFromTextFile("modifierlist",listofmodifiers);
         fillListFromTextFile("specialthrowlist",listofspecialthrows);
     }
-    public void fillListFromTextFile(String textFileName,List<String> list){
+    public void fillListFromTextFile(String textFileName,List<String> listToUse){
             final int READ_BLOCK_SIZE = 100;
         Log.d("mine", "1 ");
             try {
@@ -413,33 +415,53 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 InputRead.close();
                 if (textFileName == "proplist"){
                     String[] stringsofprops = s.split("\\r?\\n");
-                    listofprops = new LinkedList<>(Arrays.asList(stringsofprops));
-                    listofprops.removeAll(Arrays.asList("", null));
+                    listofprops = removeDuplicates(stringsofprops);
                 }
                 if (textFileName == "patternlist"){
                     Log.d("mine", "3 ");
                     String[] stringsofpatterns = s.split("\\r?\\n");
-                    listofpatterns = new LinkedList<>(Arrays.asList(stringsofpatterns));
-                    listofpatterns.removeAll(Arrays.asList("", null));
+                    listofpatterns = removeDuplicates(stringsofpatterns);
                     Log.d("mine", "listofpatterns.sizzze "+listofpatterns.size());
 
                 }
                 if (textFileName == "modifierlist"){
                     String[] stringsofmodifiers = s.split("\\r?\\n");
-                    listofmodifiers = new LinkedList<>(Arrays.asList(stringsofmodifiers));
-                    listofmodifiers.removeAll(Arrays.asList("", null));
+                    listofmodifiers = removeDuplicates(stringsofmodifiers);
+
                 }
                 if (textFileName == "specialthrowlist"){
                     String[] stringsofspecialthrows = s.split("\\r?\\n");
-                    listofspecialthrows = Arrays.asList(stringsofspecialthrows);
-                    listofspecialthrows = new LinkedList<>(Arrays.asList(stringsofspecialthrows));
-                    listofspecialthrows.removeAll(Arrays.asList("", null));
+                    listofspecialthrows = removeDuplicates(stringsofspecialthrows);
                 }
                 //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
+    }
+    public LinkedList<String> removeDuplicates(String[] arrayToRemoveDuplicatesFrom){
+
+        for(int s=0;s<arrayToRemoveDuplicatesFrom.length-1;s++)
+        {
+            for(int m=s + 1;m<arrayToRemoveDuplicatesFrom.length;m++)
+            {
+
+                if(arrayToRemoveDuplicatesFrom[s] != null && arrayToRemoveDuplicatesFrom[s].equals(arrayToRemoveDuplicatesFrom[m]))
+                {
+                    // array = ArrayUtils.removeElement(array, array[s]); --m;??
+                    arrayToRemoveDuplicatesFrom[m] = null; // Mark for deletion later on
+                }
+            }
+        }
+        List<String> listWithNulls;
+        listWithNulls = new LinkedList<>(Arrays.asList(arrayToRemoveDuplicatesFrom));
+        LinkedList<String> listToReturn = new LinkedList<>();
+        for(String data: listWithNulls) {
+            if(data != null && data != "") {
+                listToReturn.add(data);
+            }
+        }
+        return listToReturn;
     }
     public void addDataToDB(String table, String col, String textToAdd) {
         //this calls up 'insertData' from DatabaseHelper and inserts the user provided add
@@ -667,7 +689,6 @@ TODO
 -NEXT:
     -remove duplicates from pattern list
     -make other unique aspects of modifiers, special throws, patterns(if anything left, seenotes)
-    -copy phone notes over to here
     -find out how to use classes!
 -TO MAKE DB:
     -once all dialogs are complete, then do this
