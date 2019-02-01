@@ -50,6 +50,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.Checkable;
 import android.widget.CompoundButton;
 import android.widget.ListView;
 import android.speech.RecognizerIntent;
@@ -84,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     List<String> listofpatterns = new LinkedList<>();
     List<String> listofmodifiers = new LinkedList<>();
     List<String> listofspecialthrows = new LinkedList<>();
+    List<String> listofspecialthrowsequences = new LinkedList<>();
     public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
     private ListView runslistview;
     private ArrayAdapter<String> runslistviewadapter;
@@ -148,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             proptextview.setText(userInput);
                             if (!listofprops.contains(userInput)){
                                 writeToTextFile("proplist",userInput);
-                                fillListFromTextFile("proplist",listofprops);
+                                fillListFromTextFile("proplist");
                             }
                         }
                     });
@@ -206,6 +209,20 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
                     }
                 });
+                final CheckBox onlyPatternsWithHistoryCB = view.findViewById(R.id.onlyPatternsWithHistoryCB);
+                onlyPatternsWithHistoryCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+                {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+                    {
+                        if ( isChecked )
+                        {
+                            Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
+                            // perform your action here
+                        }
+
+                    }
+                });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
                 alertBuilder.setView(view);
                 alertBuilder.setCancelable(true)
@@ -216,7 +233,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                 patterntextview.setText(userInput);
                                 if (!listofpatterns.contains(userInput)){
                                     writeToTextFile("patternlist",userInput);
-                                    fillListFromTextFile("patternlist",listofpatterns);
+                                    fillListFromTextFile("patternlist");
                                 }
                             }
                         });
@@ -245,6 +262,20 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         choosemodifierdialogactv.showDropDown();
                     }
                 });
+                final CheckBox onlyModifiersWithHistoryCB = view.findViewById(R.id.onlyModifiersWithHistoryCB);
+                onlyModifiersWithHistoryCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+                {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+                    {
+                        if ( isChecked )
+                        {
+                            Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
+                            // perform your action here
+                        }
+
+                    }
+                });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
                 alertBuilder.setView(view);
                 alertBuilder.setCancelable(true)
@@ -255,7 +286,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                 modifiertextview.setText(userInput);
                                 if (!listofmodifiers.contains(userInput)){
                                     writeToTextFile("modifierlist",userInput);
-                                    fillListFromTextFile("modifierlist",listofmodifiers);
+                                    fillListFromTextFile("modifierlist");
                                 }
                             }
                         });
@@ -283,24 +314,57 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         choosespecialthrowdialogmactv.showDropDown();
                     }
                 });
+                final MultiAutoCompleteTextView specialthrowsequenceinputmactv = view.findViewById(R.id.specialthrowsequenceinputmactv);
+                ArrayAdapter<String> specialthrowsequenceinputmactvAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofspecialthrowsequences);
+                specialthrowsequenceinputmactv.setAdapter(specialthrowsequenceinputmactvAdapter);
+                specialthrowsequenceinputmactv.setThreshold(0);//this is number of letters that must match for autocomplete
+                specialthrowsequenceinputmactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
+                specialthrowsequenceinputmactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                specialthrowsequenceinputmactv.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        specialthrowsequenceinputmactv.showDropDown();
+                    }
+                });
+                final CheckBox onlySpecialThrowsWithHistoryCB = view.findViewById(R.id.onlySpecialThrowsWithHistoryCB);
+                onlySpecialThrowsWithHistoryCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+                {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+                    {
+                        if ( isChecked )
+                        {
+                            Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
+                            // perform your action here
+                        }
+
+                    }
+                });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
                 alertBuilder.setView(view);
                 alertBuilder.setCancelable(true)
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                String userInput = choosespecialthrowdialogmactv.getText().toString();
-                                specialthrowtextview.setText(userInput);
-                                if (!listofspecialthrows.contains(userInput)){
-                                    writeToTextFile("specialthrowlist",userInput);
-                                    fillListFromTextFile("specialthrowlist",listofspecialthrows);
+                                String specialThrowUserInput = choosespecialthrowdialogmactv.getText().toString();
+
+                                if (!listofspecialthrows.contains(specialThrowUserInput)){
+                                    writeToTextFile("specialthrowlist",specialThrowUserInput);
+                                    fillListFromTextFile("specialthrowlist");
                                 }
+                                String specialThrowSequenceUserInput = specialthrowsequenceinputmactv.getText().toString();
+                                if (!listofspecialthrowsequences.contains(specialThrowSequenceUserInput)){
+                                    writeToTextFile("specialthrowsequencelist",specialThrowSequenceUserInput);
+                                    fillListFromTextFile("specialthrowsequencelist");
+                                }
+                                specialthrowtextview.setText(specialThrowUserInput+"/"+specialThrowSequenceUserInput);
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
                 dialog.show();
                 dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
-                        Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+                        Resources.getSystem().getDisplayMetrics().heightPixels / 2);
             }
         });
         final Button startbutton = findViewById(R.id.startbutton);
@@ -351,20 +415,16 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void removeSiteswapsOfOtherNumbers(int objectNumber){
         //listofpatterns.clear();
         Log.d("TAG", "listofpatterns.size"+listofpatterns.size());
-        fillListFromTextFile("patternlist",listofpatterns);
+        fillListFromTextFile("patternlist");
         List<String> toRemove = new ArrayList<>();
         for (String pattern : listofpatterns){
-            if (pattern.matches("[0-9]+") && pattern.length()<8){
-                int originalnum = Integer.parseInt(pattern);
-                int numberOfDigits = pattern.length();
-                int num = originalnum;
+            if (pattern.matches("[0-9]+")){
                 int sum = 0;
-                while (num > 0) {
-                    sum = sum + num % 10;
-                    num = num / 10;
+                for (char c: pattern.toCharArray()) {
+                    sum += Character.getNumericValue(c);
                 }
+                int numberOfDigits = pattern.length();
                 int numberOfObjectsInThisSiteswap = sum/numberOfDigits;
-
                 if (objectNumber != numberOfObjectsInThisSiteswap){
                     toRemove.add(pattern);
                 }
@@ -385,19 +445,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         resetuserslistfromtemplate("patternlist");
         resetuserslistfromtemplate("modifierlist");
         resetuserslistfromtemplate("specialthrowlist");
+        resetuserslistfromtemplate("specialthrowsequencelist");
         fillListsFromTextFiles();
     }
     public void fillListsFromTextFiles(){
-        fillListFromTextFile("proplist",listofprops);
+        fillListFromTextFile("proplist");
         listofnumbers.clear();
         for (int i = 1; i <= 13; i++) {
             listofnumbers.add(i);
         }
-        fillListFromTextFile("patternlist",listofpatterns);
-        fillListFromTextFile("modifierlist",listofmodifiers);
-        fillListFromTextFile("specialthrowlist",listofspecialthrows);
+        fillListFromTextFile("patternlist");
+        fillListFromTextFile("modifierlist");
+        fillListFromTextFile("specialthrowlist");
+        fillListFromTextFile("specialthrowsequencelist");
     }
-    public void fillListFromTextFile(String textFileName,List<String> listToUse){
+    public void fillListFromTextFile(String textFileName){
             final int READ_BLOCK_SIZE = 100;
         Log.d("mine", "1 ");
             try {
@@ -433,6 +495,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     String[] stringsofspecialthrows = s.split("\\r?\\n");
                     listofspecialthrows = removeDuplicates(stringsofspecialthrows);
                 }
+                if (textFileName == "specialthrowsequencelist"){
+                    String[] stringsofspecialthrowsequences = s.split("\\r?\\n");
+                    listofspecialthrowsequences = removeDuplicates(stringsofspecialthrowsequences);
+                }
                 //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -440,15 +506,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     }
     public LinkedList<String> removeDuplicates(String[] arrayToRemoveDuplicatesFrom){
-
-        for(int s=0;s<arrayToRemoveDuplicatesFrom.length-1;s++)
-        {
-            for(int m=s + 1;m<arrayToRemoveDuplicatesFrom.length;m++)
-            {
-
-                if(arrayToRemoveDuplicatesFrom[s] != null && arrayToRemoveDuplicatesFrom[s].equals(arrayToRemoveDuplicatesFrom[m]))
-                {
-                    // array = ArrayUtils.removeElement(array, array[s]); --m;??
+        for(int s=0;s<arrayToRemoveDuplicatesFrom.length-1;s++){
+            for(int m=s + 1;m<arrayToRemoveDuplicatesFrom.length;m++){
+                if(arrayToRemoveDuplicatesFrom[s] != null && arrayToRemoveDuplicatesFrom[s].equals(arrayToRemoveDuplicatesFrom[m])){
                     arrayToRemoveDuplicatesFrom[m] = null; // Mark for deletion later on
                 }
             }
@@ -672,32 +732,24 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
             outputWriter.write("\n"+stringtoadd);
             outputWriter.close();
-
             //display file saved message
             //Toast.makeText(getBaseContext(), "File saved successfully!",Toast.LENGTH_SHORT).show();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
-
 }
-
 /*
+//Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
 TODO
 -NEXT:
-    -remove duplicates from pattern list
-    -make other unique aspects of modifiers, special throws, patterns(if anything left, seenotes)
+    -get rid of any blanks showing in autocompletetextviews
     -find out how to use classes!
 -TO MAKE DB:
     -once all dialogs are complete, then do this
     -when a run begins, check in db that columns exist for each
--when making lists from txt file, probably want to use that remove duplicates function from formic
 -design the inputs for pattern and modifiers. Probably both some kind of alertdialog popup.
-    -PATTERN. it should be filterable by number of objects.
     -SPECIAL THROWS. needs an edittext for sequence input if applicable
-    -in these there should be a filter, one thing to filter is 'patterns(or modifiers) with history with currently selected modifiers(or patterns)'
 -move phone brunn phone notes over here
 -organize these notes
 -next up stuff

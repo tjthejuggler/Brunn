@@ -17,7 +17,11 @@ android:gravity="top">
             android:id="@+id/modifierinputmactv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
-
+    <CheckBox
+        android:id="@+id/onlyModifiersWithHistoryCB"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Only show modifiers with history" />
 
     </LinearLayout>
 

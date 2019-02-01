@@ -13,11 +13,29 @@ android:gravity="top">
             android:text="Special throw:"
             android:textSize="30sp" />
 
-        <MultiAutoCompleteTextView
+    <MultiAutoCompleteTextView
             android:id="@+id/specialthrowinputmactv"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
+    <TextView
+        android:id="@+id/specialthrowsequenceinputtv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sequence(ex:10):"
+        android:textSize="30sp" />
 
-    </LinearLayout>
+    <MultiAutoCompleteTextView
+        android:id="@+id/specialthrowsequenceinputmactv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <CheckBox
+        android:id="@+id/onlySpecialThrowsWithHistoryCB"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Only show special throws with history" />
+
+
+</LinearLayout>
 
