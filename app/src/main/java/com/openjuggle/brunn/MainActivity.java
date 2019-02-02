@@ -14,10 +14,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -28,6 +30,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.SearchManager;
@@ -69,9 +72,15 @@ import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener {
     DatabaseHelper myDb;
+    TextFileHelper myTfh;
     String dbName = "brunn.db";
     AutoCompleteTextView choosepatterndialogactv;
-    public ListView mList;
+    Map<String, FileOutputStream > fileoutMap = new HashMap<String, FileOutputStream>();
+    Map<String, InputStream > inputMap = new HashMap<String, InputStream>();
+    Map<String, FileInputStream > fileInputMap = new HashMap<String, FileInputStream>();
+    Map<String, FileOutputStream > fileoutAppendMap = new HashMap<String, FileOutputStream>();
+    Map<String, List<String>> listMap = new HashMap<>();
+    List<String> listOfListNames = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
@@ -88,21 +97,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     List<String> listofmodifiers = new LinkedList<>();
     List<String> listofspecialthrows = new LinkedList<>();
     List<String> listofspecialthrowsequences = new LinkedList<>();
-    public static final int VOICE_RECOGNITION_REQUEST_CODE = 1234;
     private ListView runslistview;
     private ArrayAdapter<String> runslistviewadapter;
     private ArrayList<String> runsarraylist;
     Handler volumechecker = new Handler();
     int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
     Runnable runnable;
-    String userslongsiteswaplist = "userslongsiteswaplist.txt";
     private float x1,x2;
     static final int MIN_DISTANCE = 150;
     private int propTextViewCycleIndex = 0;
-    @Override
+    @SuppressLint("ClickableViewAccessibility")
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        myTfh = new TextFileHelper(this);//creates an object from our database class over in DatabaseHelper
+        fillMaps();
         proptextview = findViewById(R.id.proptextview);
         proptextview.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -122,7 +131,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         if (propTextViewCycleIndex==listofprops.size()){
                             propTextViewCycleIndex = 0;
                         }
-                        //Toast.makeText(MainActivity.this, "left2right swipe", Toast.LENGTH_SHORT).show ();
                         proptextview.setText(listofprops.get(propTextViewCycleIndex));
                     }
                     if (deltaX < -MIN_DISTANCE)
@@ -131,18 +139,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         if (propTextViewCycleIndex<0){
                             propTextViewCycleIndex = listofprops.size()-1;
                         }
-                        //Toast.makeText(MainActivity.this, "left2right swipe", Toast.LENGTH_SHORT).show ();
                         proptextview.setText(listofprops.get(propTextViewCycleIndex));
                     }
-                    else
-                    {
-                        // consider as something else - a screen tap for example
-                    }
-
                 }
                 return true;
             }
         });
+
         patterntextview = findViewById(R.id.patterntextview);
         modifiertextview = findViewById(R.id.modifiertextview);
         specialthrowtextview = findViewById(R.id.specialthrowtextview);
@@ -162,9 +165,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view) {
                 Toast.makeText(getBaseContext(), "fab", Toast.LENGTH_SHORT).show();
                 //doFirstRunStuff();
-                writeToTextFile("patternlist","mytest");
-                fillListsFromTextFiles();
-                //Read();
+                appendTxtFile("patternlist","mytest");
             }
         });
         final Button propbutton = findViewById(R.id.propbutton);
@@ -193,8 +194,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             String userInput = choosepropdialogactv.getText().toString();
                             proptextview.setText(userInput);
                             if (!listofprops.contains(userInput)){
-                                writeToTextFile("proplist",userInput);
-                                fillListFromTextFile("proplist");
+                                appendTxtFile("proplist",userInput);
                             }
                         }
                     });
@@ -208,7 +208,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         patternbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view2) {
-                //Toast.makeText(getBaseContext(), "patternButtonClicked",Toast.LENGTH_SHORT).show();
                 final View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
                 choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
                 ArrayAdapter<String> choosepatterndialogactvAdapter =
@@ -229,9 +228,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 choosenumberdialogspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view2, int position, long id) {
-                        //Toast.makeText(getBaseContext(), "spinnerItemSelected",Toast.LENGTH_SHORT).show();
                         removeSiteswapsOfOtherNumbers(position+1);
-                        //Toast.makeText(getBaseContext(), "listofpatterns.size"+listofpatterns.size(),Toast.LENGTH_SHORT).show();
                         Collections.sort(listofpatterns);
                         choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
                         ArrayAdapter<String> adapter =
@@ -261,9 +258,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         if ( isChecked )
                         {
                             Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
-                            // perform your action here
                         }
-
                     }
                 });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
@@ -275,8 +270,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                 String userInput = choosepatterndialogactv.getText().toString();
                                 patterntextview.setText(userInput);
                                 if (!listofpatterns.contains(userInput)){
-                                    writeToTextFile("patternlist",userInput);
-                                    fillListFromTextFile("patternlist");
+                                    appendTxtFile("patternlist",userInput);
                                 }
                             }
                         });
@@ -328,8 +322,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                 String userInput = choosemodifierdialogactv.getText().toString();
                                 modifiertextview.setText(userInput);
                                 if (!listofmodifiers.contains(userInput)){
-                                    writeToTextFile("modifierlist",userInput);
-                                    fillListFromTextFile("modifierlist");
+                                    appendTxtFile("modifierlist",userInput);
                                 }
                             }
                         });
@@ -379,9 +372,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         if ( isChecked )
                         {
                             Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
-                            // perform your action here
                         }
-
                     }
                 });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
@@ -391,15 +382,14 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String specialThrowUserInput = choosespecialthrowdialogmactv.getText().toString();
-
                                 if (!listofspecialthrows.contains(specialThrowUserInput)){
-                                    writeToTextFile("specialthrowlist",specialThrowUserInput);
-                                    fillListFromTextFile("specialthrowlist");
+                                    appendTxtFile("specialthrowlist",specialThrowUserInput);
+                                    fillListsFromTextFiles();
                                 }
                                 String specialThrowSequenceUserInput = specialthrowsequenceinputmactv.getText().toString();
                                 if (!listofspecialthrowsequences.contains(specialThrowSequenceUserInput)){
-                                    writeToTextFile("specialthrowsequencelist",specialThrowSequenceUserInput);
-                                    fillListFromTextFile("specialthrowsequencelist");
+                                    appendTxtFile("specialthrowsequencelist",specialThrowSequenceUserInput);
+                                    fillListsFromTextFiles();
                                 }
                                 specialthrowtextview.setText(specialThrowUserInput+"/"+specialThrowSequenceUserInput);
                             }
@@ -417,8 +407,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
         runslistview = (ListView) findViewById(R.id.runslistview);
-        runsarraylist = new ArrayList<String>();
-        runslistviewadapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item, runsarraylist);
+        runsarraylist = new ArrayList<>();
+        runslistviewadapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, runsarraylist);
         runslistview.setAdapter(runslistviewadapter);
         startbutton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -455,10 +445,85 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return toReturn;
     }
+    public void fillMaps(){
+        fillFileoutAppendMap();
+        fillinputMap();
+        fillFileinMap();
+        fillFileoutMap();
+        fillListMap();
+    }
+    public void onCreateDatabase(){
+        File file = this.getDatabasePath(dbName);
+        if (!file.exists()) {
+            Log.d("didntexist", "5");
+            //if the database doesn't currently exist, then this is the first time the app has been run and we need to add
+            //      the stuff to the database to make the default settings
+            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
+            //addFirstTimeRunDatabaseData();
+        } else {
+            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
+        }
+    }
+    public void fillFileoutAppendMap() {
+        try {
+            for (String listname : listOfListNames) {
+                fileoutAppendMap.put(listname, openFileOutput(listname + ".txt", MODE_PRIVATE | MODE_APPEND));
+                Log.d("filer", fileoutAppendMap.get(listname).toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void fillinputMap(){
+        try {
+            for (String listname : listOfListNames) {
+                inputMap.put(listname,getResources().openRawResource (getResources().getIdentifier
+                        (listname+"template", "raw", getPackageName())) );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void fillFileinMap(){
+        try {
+            for (String listname : listOfListNames) {
+                fileInputMap.put(listname,openFileInput(listname+".txt"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void fillFileoutMap(){
+        try {
+            Log.d("filermap2", "lol");
+            for (String listname : listOfListNames) {
+                Log.d("filermap2", "lol2");
+                FileOutputStream fileout = openFileOutput(listname + ".txt", MODE_PRIVATE);
+                fileoutMap.put(listname, fileout);
+                Log.d("filermap2", fileoutMap.get(listname).toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void fillListMap(){
+        listMap.put("proplist", listofprops);
+        listMap.put("patternlist", listofpatterns);
+        listMap.put("modifierlist", listofmodifiers);
+        listMap.put("specialthrowlist", listofspecialthrows);
+        listMap.put("specialthrowsequencelist", listofspecialthrowsequences);
+
+    }
+
     public void removeSiteswapsOfOtherNumbers(int objectNumber){
-        //listofpatterns.clear();
         Log.d("TAG", "listofpatterns.size"+listofpatterns.size());
-        fillListFromTextFile("patternlist");
+        fillListsFromTextFiles();
         List<String> toRemove = new ArrayList<>();
         for (String pattern : listofpatterns){
             if (pattern.matches("[0-9]+")){
@@ -481,107 +546,54 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         }
     }
-
-
     public void doFirstUseStuff(){
-        resetuserslistfromtemplate("proplist");
-        resetuserslistfromtemplate("patternlist");
-        resetuserslistfromtemplate("modifierlist");
-        resetuserslistfromtemplate("specialthrowlist");
-        resetuserslistfromtemplate("specialthrowsequencelist");
+        for (String listName : listOfListNames) {
+            myTfh.resetuserslistfromtemplate(inputMap.get(listName), fileoutMap.get(listName), listName);
+        }
         fillListsFromTextFiles();
     }
+    //right now it fills my dropdowns once i reset from firstuse, but for some reason
+    //  they are not full on a fresh run. This is the case whether i use the Original
+    //  or my new way.
+    //  WHAT I RECOMEND: just go through onCreate() and go through what happens when i click the settings
+    //      menu item and see what the later does that the former doesn't. Also try checking what happens
+    //      before and after the onCreate one to see if something should be moved to before it.
+
+
     public void fillListsFromTextFiles(){
-        fillListFromTextFile("proplist");
         listofnumbers.clear();
         for (int i = 1; i <= 13; i++) {
             listofnumbers.add(i);
         }
-        fillListFromTextFile("patternlist");
-        fillListFromTextFile("modifierlist");
-        fillListFromTextFile("specialthrowlist");
-        fillListFromTextFile("specialthrowsequencelist");
-    }
-    public void fillListFromTextFile(String textFileName){
-            final int READ_BLOCK_SIZE = 100;
-        Log.d("mine", "1 ");
             try {
-                Log.d("mine", "2 ");
-                FileInputStream fileIn=openFileInput(textFileName+".txt");
-                InputStreamReader InputRead= new InputStreamReader(fileIn);
-                char[] inputBuffer= new char[READ_BLOCK_SIZE];
-                String s="";
-                int charRead;
-                while ((charRead=InputRead.read(inputBuffer))>0) {
-                    // char to string conversion
-                    String readstring=String.copyValueOf(inputBuffer,0,charRead);
-                    s +=readstring;
-                }
-                InputRead.close();
-                if (textFileName == "proplist"){
-                    String[] stringsofprops = s.split("\\r?\\n");
-                    listofprops = removeDuplicates(stringsofprops);
-                }
-                if (textFileName == "patternlist"){
-                    Log.d("mine", "3 ");
-                    String[] stringsofpatterns = s.split("\\r?\\n");
-                    listofpatterns = removeDuplicates(stringsofpatterns);
-                    Log.d("mine", "listofpatterns.sizzze "+listofpatterns.size());
-                }
-                if (textFileName == "modifierlist"){
-                    String[] stringsofmodifiers = s.split("\\r?\\n");
-                    listofmodifiers = removeDuplicates(stringsofmodifiers);
-                }
-                if (textFileName == "specialthrowlist"){
-                    String[] stringsofspecialthrows = s.split("\\r?\\n");
-                    listofspecialthrows = removeDuplicates(stringsofspecialthrows);
-                }
-                if (textFileName == "specialthrowsequencelist"){
-                    String[] stringsofspecialthrowsequences = s.split("\\r?\\n");
-                    listofspecialthrowsequences = removeDuplicates(stringsofspecialthrowsequences);
-                }
-                //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
 
+/*                listofprops = myTfh.fillListFromTextFile(fileInputMap.get("proplist"));
+                listofpatterns = myTfh.fillListFromTextFile(fileInputMap.get("patternlist"));
+                listofmodifiers = myTfh.fillListFromTextFile(fileInputMap.get("modifierlist"));
+                listofspecialthrows = myTfh.fillListFromTextFile(fileInputMap.get("specialthrowlist"));
+                listofspecialthrowsequences = myTfh.fillListFromTextFile(fileInputMap.get("specialthrowsequencelist"));*/
+
+                FileInputStream fileIn = openFileInput("proplist.txt");
+                listofprops = myTfh.fillListFromTextFile(fileIn);
+                fileIn = openFileInput("patternlist.txt");
+                listofpatterns = myTfh.fillListFromTextFile(fileIn);
+                 fileIn = openFileInput("modifierlist.txt");
+                listofmodifiers = myTfh.fillListFromTextFile(fileIn);
+                 fileIn = openFileInput("specialthrowlist.txt");
+                listofspecialthrows = myTfh.fillListFromTextFile(fileIn);
+                fileIn = openFileInput("specialthrowsequencelist.txt");
+                listofspecialthrowsequences = myTfh.fillListFromTextFile(fileIn);
+                Log.d("trytry", "1 ");
+            }catch (Exception e) {
+                e.printStackTrace();}
     }
-    public LinkedList<String> removeDuplicates(String[] arrayToRemoveDuplicatesFrom){
-        for(int s=0;s<arrayToRemoveDuplicatesFrom.length-1;s++){
-            for(int m=s + 1;m<arrayToRemoveDuplicatesFrom.length;m++){
-                if(arrayToRemoveDuplicatesFrom[s] != null && arrayToRemoveDuplicatesFrom[s].equals(arrayToRemoveDuplicatesFrom[m])){
-                    arrayToRemoveDuplicatesFrom[m] = null; // Mark for deletion later on
-                }
-            }
-        }
-        List<String> listWithNulls;
-        listWithNulls = new LinkedList<>(Arrays.asList(arrayToRemoveDuplicatesFrom));
-        LinkedList<String> listToReturn = new LinkedList<>();
-        for(String data: listWithNulls) {
-            if(data != null) {
-                if (Pattern.compile( "[0-9]" ).matcher( data ).find() || Pattern.compile( "[a-zA-Z]" ).matcher( data ).find())
-                listToReturn.add(data);
-            }
-        }
-        return listToReturn;
-    }
+
     public void addDataToDB(String table, String col, String textToAdd) {
         //this calls up 'insertData' from DatabaseHelper and inserts the user provided add
         //      the EditTexts from above which were taken from our Layout
         boolean isInserted = myDb.insertData(table, col, textToAdd);
     }
-    public void onCreateDatabase(){
-        File file = this.getDatabasePath(dbName);
-        if (!file.exists()) {
-            Log.d("didntexist", "5");
-            //if the database doesn't currently exist, then this is the first time the app has been run and we need to add
-            //      the stuff to the database to make the default settings
-            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
-            //addFirstTimeRunDatabaseData();
-        } else {
-            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
-        }
-    }
+
     @Override
     protected void onResume() {
         // start handler as activity become visible
@@ -637,8 +649,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         setCurrentVolume();
     }
     public void endrun(String endtype){
-        //Toast.makeText(MainActivity.this,
-        //        "endrun("+endtype+")", Toast.LENGTH_LONG).show();
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
@@ -722,26 +732,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void onClick(View v) {
         // TODO Auto-generated method stub
     }
-    public void Read(){
-        final int READ_BLOCK_SIZE = 100;
-        try {
-            FileInputStream fileIn=openFileInput("patternlist.txt");
-            InputStreamReader InputRead= new InputStreamReader(fileIn);
-            char[] inputBuffer= new char[READ_BLOCK_SIZE];
-            String s="";
-            int charRead;
-            while ((charRead=InputRead.read(inputBuffer))>0) {
-                // char to string conversion
-                String readstring=String.copyValueOf(inputBuffer,0,charRead);
-                s +=readstring;
-            }
-            InputRead.close();
-            //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-    public void resetuserslistfromtemplate(String userlist){
+
+    public void resetuserslistfromtemplateOriginal(String userlist){
         final int READ_BLOCK_SIZE = 100;
         try {
             InputStream ins = getResources().openRawResource(
@@ -768,17 +760,37 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             e.printStackTrace();
         }
     }
-    public void writeToTextFile(String listfile, String stringtoadd){
-        try {
+
+    public void resetuserslistfromtemplate(String listfile){
+        try{
+            //fillfillinputMap();
+            //fillFileoutMap();
+
+            InputStream ins = getResources().openRawResource(
+                    getResources().getIdentifier(listfile+"template",
+                            "raw", getPackageName()));
+            FileOutputStream fileout=openFileOutput(listfile+".txt",MODE_PRIVATE);
+            Log.d("filerfileout", fileout.toString());
+            Log.d("filerfileins", ins.toString());
+            Log.d("filermapin", fileInputMap.get(listfile).toString());
+            Log.d("filermaplistfile", listfile);
+            Log.d("filermapout", fileoutMap.get(listfile).toString());
+            myTfh.resetuserslistfromtemplate(inputMap.get(listfile),fileoutMap.get(listfile), listfile);
+            fillListsFromTextFiles();
+        } catch (Exception e) {e.printStackTrace();}
+    }
+
+
+
+
+
+    public void appendTxtFile(String listfile, String stringtoadd){
+        try{
+            fillFileoutAppendMap();
             FileOutputStream fileout=openFileOutput(listfile+".txt",MODE_PRIVATE | MODE_APPEND);
-            OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
-            outputWriter.write("\n"+stringtoadd);
-            outputWriter.close();
-            //display file saved message
-            //Toast.makeText(getBaseContext(), "File saved successfully!",Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            myTfh.appendTextFile(fileoutAppendMap.get(listfile),stringtoadd);
+            fillListsFromTextFiles();
+        } catch (Exception e) {e.printStackTrace();}
     }
 }
 /*
