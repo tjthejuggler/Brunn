@@ -18,6 +18,7 @@ import java.util.regex.Pattern;
 public class TextFileHelper extends AppCompatActivity {
 
     private Context context;
+    MainActivity mActivity = new MainActivity();
 
     public TextFileHelper(Context context) {
 
@@ -41,9 +42,10 @@ public class TextFileHelper extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        //mActivity.fillListsFromTextFiles();
     }
+   public void resetuserslistfromtemplate(InputStream ins, FileOutputStream fileout,String listName){
 
-    public void resetuserslistfromtemplate(InputStream ins, FileOutputStream fileout,String userlist){
         Log.d("myTfh", "resetuserslistfromtemplate");
         final int READ_BLOCK_SIZE = 100;
         try {
@@ -65,7 +67,6 @@ public class TextFileHelper extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-
 
     public LinkedList<String> fillListFromTextFile(FileInputStream fileIn){
         LinkedList<String> listToReturn = null;
@@ -112,6 +113,7 @@ public class TextFileHelper extends AppCompatActivity {
         }
         return listToReturn;
     }
+
 
     public void Read(){
         final int READ_BLOCK_SIZE = 100;

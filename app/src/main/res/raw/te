@@ -75,6 +75,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     TextFileHelper myTfh;
     String dbName = "brunn.db";
     AutoCompleteTextView choosepatterndialogactv;
+    Map<String, FileOutputStream > fileoutMap = new HashMap<String, FileOutputStream>();
+    Map<String, InputStream > inputMap = new HashMap<String, InputStream>();
+    Map<String, FileInputStream > fileInputMap = new HashMap<String, FileInputStream>();
+    Map<String, FileOutputStream > fileoutAppendMap = new HashMap<String, FileOutputStream>();
     List<String> listOfListNames = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
     private Timer timer;
     private TextView timertext;
@@ -107,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         myTfh = new TextFileHelper(this);//creates an object from our database class over in DatabaseHelper
-        //fillMaps();
+        fillMaps();
         proptextview = findViewById(R.id.proptextview);
         proptextview.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -163,7 +167,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view) {
                 Toast.makeText(getBaseContext(), "fab", Toast.LENGTH_SHORT).show();
                 //doFirstUseStuff();
-                myTfh.appendTextFile(getFileOutputAppendStream("patternlist"),"mytest2");
+
+                read();
+                appendTxtFile("patternlist","mytest2");
             }
         });
         final Button propbutton = findViewById(R.id.propbutton);
@@ -183,25 +189,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         choosepropdialogactv.showDropDown();
                     }
                 });
-                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
-                alertBuilder.setView(view);
-                alertBuilder.setCancelable(true)
-                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                String userInput = choosepropdialogactv.getText().toString();
-                                proptextview.setText(userInput);
-                                if (!listofprops.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("proplist"),userInput);
-                                    listofprops.add(userInput);
-                                }
-
+            AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+            alertBuilder.setView(view);
+            alertBuilder.setCancelable(true)
+                    .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            String userInput = choosepropdialogactv.getText().toString();
+                            proptextview.setText(userInput);
+                            if (!listofprops.contains(userInput)){
+                                appendTxtFile("proplist",userInput);
                             }
-                        });
+                        }
+                    });
                 final Dialog dialog = alertBuilder.create();
-                dialog.show();
-                dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
-                        Resources.getSystem().getDisplayMetrics().heightPixels / 3);
+            dialog.show();
+            dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
+                    Resources.getSystem().getDisplayMetrics().heightPixels / 3);
             }
         });
         final Button patternbutton = findViewById(R.id.patternbutton);
@@ -270,8 +274,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                 String userInput = choosepatterndialogactv.getText().toString();
                                 patterntextview.setText(userInput);
                                 if (!listofpatterns.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("patternlist"),userInput);
-                                    listofpatterns.add(userInput);
+                                    appendTxtFile("patternlist",userInput);
                                 }
                             }
                         });
@@ -323,8 +326,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                 String userInput = choosemodifierdialogactv.getText().toString();
                                 modifiertextview.setText(userInput);
                                 if (!listofmodifiers.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("modifierlist"),userInput);
-                                    listofmodifiers.add(userInput);
+                                    appendTxtFile("modifierlist",userInput);
                                 }
                             }
                         });
@@ -383,17 +385,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                String userInput = choosespecialthrowdialogmactv.getText().toString();
-                                if (!listofspecialthrows.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("specialthrowlist"),userInput);
-                                    listofspecialthrows.add(userInput);
+                                String specialThrowUserInput = choosespecialthrowdialogmactv.getText().toString();
+                                if (!listofspecialthrows.contains(specialThrowUserInput)){
+                                    appendTxtFile("specialthrowlist",specialThrowUserInput);
+                                    fillListsFromTextFiles();
                                 }
                                 String specialThrowSequenceUserInput = specialthrowsequenceinputmactv.getText().toString();
                                 if (!listofspecialthrowsequences.contains(specialThrowSequenceUserInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("specialthrowsequencelist"),specialThrowSequenceUserInput);
-                                    listofspecialthrowsequences.add(userInput);
+                                    appendTxtFile("specialthrowsequencelist",specialThrowSequenceUserInput);
+                                    fillListsFromTextFiles();
                                 }
-                                specialthrowtextview.setText(userInput+"/"+specialThrowSequenceUserInput);
+                                specialthrowtextview.setText(specialThrowUserInput+"/"+specialThrowSequenceUserInput);
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
@@ -466,7 +468,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return toReturn;
     }
+    public void fillMaps(){
+        fillFileoutAppendMap();
+        fillinputMap();
+        fillFileinMap();
+        fillFileoutMap();
 
+    }
     public void onCreateDatabase(){
         File file = this.getDatabasePath(dbName);
         if (!file.exists()) {
@@ -479,9 +487,58 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
         }
     }
+    public void fillFileoutAppendMap() {
+        try {
+            for (String listname : listOfListNames) {
+                fileoutAppendMap.put(listname, openFileOutput(listname + ".txt", MODE_PRIVATE | MODE_APPEND));
+                Log.d("filer", fileoutAppendMap.get(listname).toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void fillinputMap(){
+        try {
+            for (String listname : listOfListNames) {
+                inputMap.put(listname,getResources().openRawResource (getResources().getIdentifier
+                        (listname+"template", "raw", getPackageName())) );
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void fillFileinMap(){
+        try {
+            for (String listname : listOfListNames) {
+                fileInputMap.put(listname,openFileInput(listname+".txt"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void fillFileoutMap(){
+        try {
+            Log.d("filermap2", "lol");
+            for (String listname : listOfListNames) {
+                Log.d("filermap2", "lol2");
+                FileOutputStream fileout = openFileOutput(listname + ".txt", MODE_PRIVATE);
+                fileoutMap.put(listname, fileout);
+                Log.d("filermap2", fileoutMap.get(listname).toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
     public void removeSiteswapsOfOtherNumbers(int objectNumber){
         Log.d("TAG", "listofpatterns.size"+listofpatterns.size());
-        listofpatterns = myTfh.fillListFromTextFile(getFileInputStream("patternlist"));
+        fillListsFromTextFiles();
         List<String> toRemove = new ArrayList<>();
         for (String pattern : listofpatterns){
             if (pattern.matches("[0-9]+")){
@@ -504,53 +561,35 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         }
     }
-    public InputStream getInputStream(String listName){
-        InputStream ins = null;
-        try {
-            ins = getResources().openRawResource(getResources().getIdentifier
-                    (listName + "template", "raw", getPackageName()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return ins;
-    }
-    public FileInputStream getFileInputStream(String listName){
-        FileInputStream ins = null;
-        try {
-            ins = openFileInput(listName+".txt");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return ins;
-    }
-
-    public FileOutputStream getFileOutputStream(String listName){
-        FileOutputStream fileout = null;
-        try {
-            fileout = openFileOutput(listName + ".txt", MODE_PRIVATE);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return fileout;
-    }
-    public FileOutputStream getFileOutputAppendStream(String listName){
-        FileOutputStream fileout = null;
-        try {
-            fileout = openFileOutput(listName + ".txt", MODE_PRIVATE | MODE_APPEND);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return fileout;
-    }
-
-    public void doFirstUseStuff() {
-        myTfh.resetuserslistfromtemplate(getInputStream("proplist"), getFileOutputStream("proplist"), "proplist");
-        myTfh.resetuserslistfromtemplate(getInputStream("patternlist"), getFileOutputStream("patternlist"), "patternlist");
-        myTfh.resetuserslistfromtemplate(getInputStream("modifierlist"), getFileOutputStream("modifierlist"), "modifierlist");
-        myTfh.resetuserslistfromtemplate(getInputStream("specialthrowlist"), getFileOutputStream("specialthrowlist"), "specialthrowlist");
-        myTfh.resetuserslistfromtemplate(getInputStream("specialthrowsequencelist"), getFileOutputStream("specialthrowsequencelist"), "specialthrowsequencelist");
+    public void doFirstUseStuff(){
+        resetuserslistfromtemplate("proplist");
+        resetuserslistfromtemplate("patternlist");
+        resetuserslistfromtemplate("modifierlist");
+        resetuserslistfromtemplate("specialthrowlist");
+        resetuserslistfromtemplate("specialthrowsequencelist");
         fillListsFromTextFiles();
+/*        for (String listName : listOfListNames) {
+            try {
+                //InputStream ins = getResources().openRawResource(getResources().getIdentifier
+                //        (listName + "template", "raw", getPackageName()));
+                //FileOutputStream fileout = openFileOutput(listName + ".txt", MODE_PRIVATE);
+                resetuserslistfromtemplate(listName);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            //resetuserslistfromtemplate(inputMap.get(listName), fileoutMap.get(listName), listName);
+
+        }
+        fillListsFromTextFiles();*/
     }
+    //right now it fills my dropdowns once i reset from firstuse, but for some reason
+    //  they are not full on a fresh run. This is the case whether i use the Original
+    //  or my new way.
+    //  WHAT I RECOMEND: just go through onCreate() and go through what happens when i click the settings
+    //      menu item and see what the later does that the former doesn't. Also try checking what happens
+    //      before and after the onCreate one to see if something should be moved to before it.
+
     public void resetuserslistfromtemplate(String listName){
         Log.d("myTfh", "resetuserslistfromtemplate");
         final int READ_BLOCK_SIZE = 100;
@@ -582,13 +621,75 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         for (int i = 1; i <= 13; i++) {
             listofnumbers.add(i);
         }
-            listofprops = myTfh.fillListFromTextFile(getFileInputStream("proplist"));
-            listofpatterns = myTfh.fillListFromTextFile(getFileInputStream("patternlist"));
-            listofmodifiers = myTfh.fillListFromTextFile(getFileInputStream("modifierlist"));
-            listofspecialthrows = myTfh.fillListFromTextFile(getFileInputStream("specialthrowlist"));
-            listofspecialthrowsequences = myTfh.fillListFromTextFile(getFileInputStream("specialthrowsequencelist"));
-            Log.d("trytry", "1 ");
+            try {
+
+                Log.d("now", "fillListsFromTextFiles: "+fileInputMap.get("proplist"));
+/*                listofprops = myTfh.fillListFromTextFile(fileInputMap.get("proplist"));
+                listofpatterns = myTfh.fillListFromTextFile(fileInputMap.get("patternlist"));
+                listofmodifiers = myTfh.fillListFromTextFile(fileInputMap.get("modifierlist"));
+                listofspecialthrows = myTfh.fillListFromTextFile(fileInputMap.get("specialthrowlist"));
+                listofspecialthrowsequences = myTfh.fillListFromTextFile(fileInputMap.get("specialthrowsequencelist"));*/
+                FileInputStream fileIn = openFileInput("proplist.txt");
+                listofprops = fillListFromTextFile(fileIn);
+                fileIn = openFileInput("patternlist.txt");
+                listofpatterns = fillListFromTextFile(fileIn);
+                 fileIn = openFileInput("modifierlist.txt");
+                listofmodifiers = fillListFromTextFile(fileIn);
+                 fileIn = openFileInput("specialthrowlist.txt");
+                listofspecialthrows = fillListFromTextFile(fileIn);
+                fileIn = openFileInput("specialthrowsequencelist.txt");
+                listofspecialthrowsequences = fillListFromTextFile(fileIn);
+                Log.d("trytry", "1 ");
+            }catch (Exception e) {
+                e.printStackTrace();}
     }
+
+    public LinkedList<String> fillListFromTextFile(FileInputStream fileIn){
+        LinkedList<String> listToReturn = null;
+        final int READ_BLOCK_SIZE = 100;
+        Log.d("mine2", "1 ");
+        try {
+            Log.d("mine2", "2 ");
+            InputStreamReader InputRead= new InputStreamReader(fileIn);
+            char[] inputBuffer= new char[READ_BLOCK_SIZE];
+            String s="";
+            int charRead;
+            while ((charRead=InputRead.read(inputBuffer))>0) {
+                // char to string conversion
+                String readstring=String.copyValueOf(inputBuffer,0,charRead);
+                s +=readstring;
+            }
+            InputRead.close();
+            listToReturn = removeDuplicates(s.split("\\r?\\n"));
+            Log.d("mine2", s);
+            //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return listToReturn;
+
+    }
+
+    public LinkedList<String> removeDuplicates(String[] arrayToRemoveDuplicatesFrom){
+        for(int s=0;s<arrayToRemoveDuplicatesFrom.length-1;s++){
+            for(int m=s + 1;m<arrayToRemoveDuplicatesFrom.length;m++){
+                if(arrayToRemoveDuplicatesFrom[s] != null && arrayToRemoveDuplicatesFrom[s].equals(arrayToRemoveDuplicatesFrom[m])){
+                    arrayToRemoveDuplicatesFrom[m] = null; // Mark for deletion later on
+                }
+            }
+        }
+        List<String> listWithNulls;
+        listWithNulls = new LinkedList<>(Arrays.asList(arrayToRemoveDuplicatesFrom));
+        LinkedList<String> listToReturn = new LinkedList<>();
+        for(String data: listWithNulls) {
+            if(data != null) {
+                if (Pattern.compile( "[0-9]" ).matcher( data ).find() || Pattern.compile( "[a-zA-Z]" ).matcher( data ).find())
+                    listToReturn.add(data);
+            }
+        }
+        return listToReturn;
+    }
+
     public void addDataToDB(String table, String col, String textToAdd) {
         //this calls up 'insertData' from DatabaseHelper and inserts the user provided add
         //      the EditTexts from above which were taken from our Layout
@@ -600,26 +701,26 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         // start handler as activity become visible
         volumechecker.postDelayed( runnable = new Runnable() {
             public void run() {
-                Boolean volumeWentDown = false;
-                Boolean volumeWentUp = false;
-                AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-                if (currentVolume > audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
-                    volumeWentDown = true;
-                }
-                if (currentVolume < audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
-                    volumeWentUp = true;
-                }
-                if (!inRun){
-                    if (volumeWentDown || volumeWentUp){
-                        beginrun();
+                    Boolean volumeWentDown = false;
+                    Boolean volumeWentUp = false;
+                    AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                    if (currentVolume > audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
+                        volumeWentDown = true;
                     }
-                }else if (inRun){
-                    if (volumeWentDown){
-                        endrun("drop");
+                    if (currentVolume < audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
+                        volumeWentUp = true;
                     }
-                    if (volumeWentUp){
-                        endrun("catch");
-                    }
+                    if (!inRun){
+                        if (volumeWentDown || volumeWentUp){
+                            beginrun();
+                        }
+                    }else if (inRun){
+                        if (volumeWentDown){
+                            endrun("drop");
+                        }
+                        if (volumeWentUp){
+                            endrun("catch");
+                        }
                 }
                 volumechecker.postDelayed(runnable, delay);
             }
@@ -734,8 +835,84 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         // TODO Auto-generated method stub
     }
 
+    public void resetuserslistfromtemplateOriginal(String userlist){
+        final int READ_BLOCK_SIZE = 100;
+        try {
+            InputStream ins = getResources().openRawResource(
+                    getResources().getIdentifier(userlist+"template",
+                            "raw", getPackageName()));
+            InputStreamReader InputRead= new InputStreamReader(ins);
+            char[] inputBuffer= new char[READ_BLOCK_SIZE];
+            String s="";
+            int charRead;
+            while ((charRead=InputRead.read(inputBuffer))>0) {
+                // char to string conversion
+                String readstring=String.copyValueOf(inputBuffer,0,charRead);
+                s +=readstring;
+            }
+            InputRead.close();
+            FileOutputStream fileout=openFileOutput(userlist+".txt", MODE_PRIVATE);
+            OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
+            outputWriter.write(s);
+            outputWriter.close();
+            //display file saved message
+            //Toast.makeText(getBaseContext(), "File saved successfully!",Toast.LENGTH_SHORT).show();
+            //Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void resetuserslistfromtemplate2(String listfile){
+        try{
+            //fillfillinputMap();
+            //fillFileoutMap();
+
+            InputStream ins = getResources().openRawResource(
+                    getResources().getIdentifier(listfile+"template",
+                            "raw", getPackageName()));
+            FileOutputStream fileout=openFileOutput(listfile+".txt",MODE_PRIVATE);
+            Log.d("filerfileout", fileout.toString());
+            Log.d("filerfileins", ins.toString());
+            Log.d("filermapin", fileInputMap.get(listfile).toString());
+            Log.d("filermaplistfile", listfile);
+            Log.d("filermapout", fileoutMap.get(listfile).toString());
+            myTfh.resetuserslistfromtemplate(ins,fileout, listfile);
+            //myTfh.resetuserslistfromtemplate(inputMap.get(listfile),fileoutMap.get(listfile), listfile);
+            fillListsFromTextFiles();
+        } catch (Exception e) {e.printStackTrace();}
+    }
 
 
+
+
+
+    public void appendTxtFile(String listfile, String stringtoadd){
+        try{
+            fillFileoutAppendMap();
+            FileOutputStream fileout=openFileOutput(listfile+".txt",MODE_PRIVATE | MODE_APPEND);
+            appendTextFile(fileout,stringtoadd);
+            //myTfh.appendTextFile(fileoutAppendMap.get(listfile),stringtoadd);
+            fillListsFromTextFiles();
+        } catch (Exception e) {e.printStackTrace();}
+    }
+    public void appendTextFile(FileOutputStream fileout, String stringtoadd){
+        Log.d("myTfh2", "appendTextFile1");
+        try {
+            //Log.d("myTfh2", );
+
+            //FileOutputStream fileout=openFileOutput(listfile+".txt",MODE_PRIVATE | MODE_APPEND);
+            Log.d("myTfh2", "appendTextFile2");
+            OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
+            Log.d("myTfh2", "appendTextFile3");
+            outputWriter.write("\n"+stringtoadd);
+            Log.d("myTfh2", "appendTextFile4");
+            outputWriter.close();
+            Log.d("myTfh2", "appendTextFile5");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
 /*
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();

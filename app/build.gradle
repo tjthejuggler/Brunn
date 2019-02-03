@@ -10,6 +10,14 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+    sourceSets {
+        main {
+            java {
+                exclude 'temp.java'
+                exclude 'temp2.java'
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
