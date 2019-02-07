@@ -5,9 +5,16 @@ package com.openjuggle.brunn;
         import android.database.Cursor;
         import android.database.DatabaseUtils;
         import android.database.sqlite.SQLiteDatabase;
+        import android.database.sqlite.SQLiteException;
         import android.database.sqlite.SQLiteOpenHelper;
+        import android.os.Environment;
+        import android.view.ViewStructure;
         import android.widget.Toast;
 
+        import java.io.File;
+        import java.io.FileInputStream;
+        import java.io.FileOutputStream;
+        import java.nio.channels.FileChannel;
         import java.util.ArrayList;
         import java.util.List;
 
@@ -21,64 +28,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //      -in order to actually get rid of an unwanted DB, you must remove the data and cache of the app,
     //              uninstalling and recreating the same DB doesn't work
     public static final String DATABASE_NAME = "brunn.db";
-    public static final String PATTERNS_TABLE_NAME = "PATTERNS";
-    public static final String PATTERNS_COL_ID = "ID";
-    public static final String PATTERNS_COL_NAME = "ENTRYNAME";
-    public static final String PATTERNS_COL_DESCRIPTION = "DESCRIPTION";
-    public static final String PATTERNS_COL_SS = "SS";
-    public static final String PATTERNS_COL_TYPE = "OBJECTTYPE";
-    public static final String PATTERNS_COL_NUMBER = "NUMBER";
-    public static final String PATTERNS_COL_ATTRIBUTES = "ATTRIBUTES";
-    public static final String PATTERNS_COL_LINK = "LINK";
-
-    public static final String MODIFIERS_TABLE_NAME = "MODIFIERS";
-    public static final String MODIFIERS_COL_ID = "ID";
-    public static final String MODIFIERS_COL_NAME = "NAME";
-    public static final String MODIFIERS_COL_DESCRIPTION = "DESCRIPTION";
-
-    //both of the history tables are simply patterns along one axis and modifiers along the other,
-    //      the modifiers are both solo and in groups EX:(modifier1)(modifier2)(modifier1,modifier2)... *EACH() IS A NEW CELL*
-    //      each combination of pattern & modifier holds the entire history of that combination,
-    //      in each cell for drills it follows this setup:
-    //        -(#ofAttempts-if fatal drops, otherwise just make it a 0)(#ofSets)(setLength)(date/time),
-    //       in each cell for endurance it follows this setup:
-    //          -(run length)(date/time),
-    //    -for both history tables, the first item in the MODIFIERS column is 'Pattern Names' because going along
-    //              that row is just the pattern names
-
-    public static final String HISTORYDRILL_TABLE_NAME = "HISTORYDRILL";
-    public static final String HISTORYDRILL_COL_MODIFIERS = "MODIFIERS";
-
-    public static final String HISTORYENDURANCE_TABLE_NAME = "HISTORYENDURANCE";
-    public static final String HISTORYENDURANCE_COL_MODIFIERS = "MODIFIERS";
-
-    //I don't know yet what all will be in here, but some guesses are:
-    //      -max number of objects
-    //      -types of objects
-    //      -default settings such as # of objects and type of object
-    public static final String SETTINGS_TABLE_NAME = "SETTINGS";
-    public static final String SETTINGS_COL_ID = "ID";
-    //the MISC column is used for lots of different settings that need only one cell each. Here is the Key:
-    //      0 = max number of objects
-    public static final String SETTINGS_COL_MISC = "MISC";
-
-    public static final String SESSIONS_TABLE_NAME = "SESSIONS";
+    public static final String TABLE_NAME = "HISTORY";
+    public static final String COL_DATE = "DATE";
+    public static final String COL_NAME = "NAME";
+    public static final String COL_NUMBER = "NUMBER";
+    public static final String COL_PROP = "PROP";
+    public static final String COL_MODIFIERS = "MODIFIERS";
+    public static final String COL_SPECIALTHROWS = "SPECIALTHROWS";
+    public static final String COL_SPECIALTHROWSEQUENCES = "SPECIALTHROWSEQUENCES";
+    public static final String COL_LINK = "LINK";
 
 
-    //things to do to make a varients table
-    //      it is the same as the current patterns table, just with an extra column for description
+    //        -Names of db columns:
+//        -date/time
+//                -site/name(string)
+//                -number of objects(integer)
+//                -prop(string)
+//                -modifiers(string,comma separated, unlimited)
+//                -special throws(string,comma separated, unlimited)
+//        -special throws sequence(int,comma separated, unlimited)
 
-    //things to do to make the complete patterns table
-    //      -get the number of columns we need from the other to do list
-    //          they should probaby all be string cells, it may be simpler to just go ahead and make the
-    //              # of objects column a string as well and just convert toInt as we need it.
 
-    //we are going to need differnet functions in here to add stuff to varients and patterns
-
-    //we are going to also need different functions to remove rows(entries) from either which will be hooked up
-    //      to the delete button in info
-
-    //and we are going to need function that can edit preexisting rows(entries)
 
     public DatabaseHelper(Context context) {
 
@@ -91,17 +61,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         //'db.execSQL' executes whatever SQLite command(quarry) we give after it
         //in this case it creates our 4 tables
-        db.execSQL("create table " + PATTERNS_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT,ENTRYNAME TEXT,DESCRIPTION TEXT,SS TEXT,ATTRIBUTES TEXT,LINK TEXT)");
+        db.execSQL("create table HISTORY (ID INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "DATE TEXT,NAME TEXT,NUMBER INTEGER,PROP TEXT,MODIFIERS TEXT,SPECIALTHROWS TEXT,SPECIALTHROWSEQUENCES INTEGER)");
 
-        db.execSQL("create table " + MODIFIERS_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT,NAME TEXT,DESCRIPTION TEXT)");
 
-        db.execSQL("create table " + HISTORYDRILL_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT,MODIFIERS TEXT)");
-
-        db.execSQL("create table " + HISTORYENDURANCE_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT,MODIFIERS TEXT)");
-
-        db.execSQL("create table " + SETTINGS_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT,MISC TEXT)");
-
-        db.execSQL("create table " + SESSIONS_TABLE_NAME + " (ID INTEGER PRIMARY KEY AUTOINCREMENT,BEGINTIME TEXT,ENDTIME TEXT,NOTES TEXT)");
         //fillDBwithDefaultValues();
     }
 
@@ -111,12 +74,119 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         //the drop command removes a table
-        db.execSQL("DROP TABLE IF EXISTS " + PATTERNS_TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + MODIFIERS_TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + HISTORYDRILL_TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + HISTORYENDURANCE_TABLE_NAME);
-        db.execSQL("DROP TABLE IF EXISTS " + SETTINGS_TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
+    }
+
+    //TODO
+    //it would be nice to hook up exporting db so i can actually see the file
+
+    //THIS WORKS
+    //  this checks to see if the .db file exists
+    public boolean checkDataBase() {
+        //SQLiteDatabase checkDB = null;gg
+        boolean toreturn = false;
+        try {
+
+            toreturn =true;
+            //checkDB = SQLiteDatabase.openDatabase(DATABASE_NAME, null,
+            //        SQLiteDatabase.OPEN_READONLY);
+            //checkDB.close();
+
+        } catch (SQLiteException e) {
+            // database doesn't exist yet.
+        }
+        return toreturn;
+    }
+
+    //THIS WORKS
+    public boolean insertContact () {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("PROP", "poop");
+        db.insert("HISTORY", null, contentValues);
+        return true;
+    }
+
+    //THIS WORKS
+    public ArrayList<String> getAllFromColumn(String columnName) {
+        ArrayList<String> array_list = new ArrayList<String>();
+
+        //hp = new HashMap();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res =  db.rawQuery( "select * from HISTORY", null );
+        res.moveToFirst();
+
+        while(res.isAfterLast() == false){
+            array_list.add(res.getString(res.getColumnIndex(columnName)));
+            res.moveToNext();
+        }
+        return array_list;
+    }
+
+    //THIS WORKS
+    public boolean exportDatabase(String packageName, Context context){
+        boolean toReturn = false;
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String currentDBPath = "/data/data/" + packageName + "/databases/" + DATABASE_NAME;
+                String backupDBPath = DATABASE_NAME;
+                File currentDB = new File(currentDBPath);
+                File backupDB = new File(sd, backupDBPath);
+                //Toast.makeText(MainActivity.this, "DB exported!", Toast.LENGTH_LONG).show();
+                if (currentDB.exists()) {
+                    FileChannel src = new FileInputStream(currentDB).getChannel();
+                    FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                    dst.transferFrom(src, 0, src.size());
+                    src.close();
+                    dst.close();
+                    Toast.makeText(context, "DB exported!", Toast.LENGTH_LONG).show();
+                }
+                toReturn = true;
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, "DB not exported", Toast.LENGTH_LONG).show();
+        }
+        return toReturn;
+    }
+
+    //THIS WORKS
+    public boolean importDatabase(String packageName, Context context){
+        boolean toReturn = false;
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+
+                String currentDBPath = DATABASE_NAME;
+                String backupDBPath = "/data/data/" + packageName + "/databases/" + DATABASE_NAME;
+                File currentDB = new File(sd, currentDBPath);
+                File backupDB = new File(backupDBPath);
+
+                if (currentDB.exists()) {
+                    FileChannel src = new FileInputStream(currentDB).getChannel();
+                    FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                    dst.transferFrom(src, 0, src.size());
+                    src.close();
+
+                    dst.close();
+                    //fillAllFromDB();
+                    Toast.makeText(context, "DB imported!", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(context, "There is no file to import in the devices main directory.", Toast.LENGTH_LONG).show();
+                }
+                toReturn = true;
+            } else {
+                toReturn = false;
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, "DB not imported", Toast.LENGTH_LONG).show();
+        }
+        return toReturn;
     }
 
     public List<String> getEveryCellFromTable(String tableName) {
@@ -217,12 +287,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return res;
     }
 
+    //THIS WORKS
     public void clearTable(String tableName){
 
         SQLiteDatabase db = this.getWritableDatabase();
 
         db.execSQL("delete from "+ tableName);
     }
+
+
 
     //this is very similar to the insertData function, the only difference is that we use 'db.update()'
     public boolean updateData(String table,String col,String row,String rowIdentifier,String textSent) {
@@ -247,6 +320,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 //    public void deleteDB(){
 //        context.deleteDatabase("myDatabaseB");
 //    }
+
+
 
     public boolean existsColumnInTable(String table, String columnToCheck) {
         SQLiteDatabase db = this.getWritableDatabase();

@@ -1,7 +1,8 @@
 
 package com.openjuggle.brunn;
 
-
+import android.net.Uri;
+import android.provider.Settings;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
@@ -146,11 +147,19 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         modifiertextview = findViewById(R.id.modifiertextview);
         specialthrowtextview = findViewById(R.id.specialthrowtextview);
         if(firstuse()){
-            Toast.makeText(getBaseContext(), "firstuse", Toast.LENGTH_SHORT).show();
             doFirstUseStuff();
         }
 
         onCreateDatabase();
+        if (myDb.checkDataBase()){
+            //myDb.clearTable("HISTORY");
+            //boolean here = myDb.insertContact();
+            //myDb.insertData("HISTORY", "PROP", "works");
+            //myDb.updateData("HISTORY", "PROP", "ID", "TEST", "MYTEST" );
+            Toast.makeText(getBaseContext(), "In name column: "+myDb.getAllFromColumn("NAME").toString(), Toast.LENGTH_SHORT).show();
+        }else{
+            Toast.makeText(getBaseContext(), "db doesnt exists", Toast.LENGTH_SHORT).show();
+        }
         setCurrentVolume();
         timertext = findViewById(R.id.timertext);
         fillListsFromTextFiles();
@@ -161,9 +170,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
+                    showGivePermissionDialog();
+                }
+
                 Toast.makeText(getBaseContext(), "fab", Toast.LENGTH_SHORT).show();
                 //doFirstUseStuff();
-                myTfh.appendTextFile(getFileOutputAppendStream("patternlist"),"mytest2");
+                //myTfh.appendTextFile(getFileOutputAppendStream("patternlist"),"mytest2");
             }
         });
         final Button propbutton = findViewById(R.id.propbutton);
@@ -394,6 +407,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                     listofspecialthrowsequences.add(userInput);
                                 }
                                 specialthrowtextview.setText(userInput+"/"+specialThrowSequenceUserInput);
+                                specificsChanged();
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
@@ -437,25 +451,25 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         });
     }
-    public void read(){
-        final int READ_BLOCK_SIZE = 100;
-        try {
-            FileInputStream fileIn=openFileInput("patternlist.txt");
-            InputStreamReader InputRead= new InputStreamReader(fileIn);
-            char[] inputBuffer= new char[READ_BLOCK_SIZE];
-            String s="";
-            int charRead;
-            while ((charRead=InputRead.read(inputBuffer))>0) {
-                // char to string conversion
-                String readstring=String.copyValueOf(inputBuffer,0,charRead);
-                s +=readstring;
-            }
-            InputRead.close();
-            Toast.makeText(getBaseContext(), s,Toast.LENGTH_SHORT).show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void specificsChanged(){
+
+//        -TO MAKE DB:
+//        -every time the specifics change:
+//        -if there were completed runs with the previous specifics, we upload them to the db, to do this:
+//        -check if there are completed runs that have not been uploaded to the db yet, if there are..
+//        -make a new row for each run and fill in the info of the runs
+//        -once completed runs of the previous specifics have been uploaded:
+//        -check the db for all runs which match the newly set specifics, get the personal bests for it and put them in a textview
+//                -then we just start doing runs until we switch specifics and start the process over
+//        -We should upload completed runs to DB if:
+//        -the app is being closed
+//        -specifics change
+//                -enough time has elapsed without a run
+//        -maybe make an 'upload runs to db' button
     }
+
+
+
     public boolean firstuse(){
         Boolean toReturn = false;
         try {
@@ -544,6 +558,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
 
     public void doFirstUseStuff() {
+        Toast.makeText(getBaseContext(), "doFirstUseStuff()",Toast.LENGTH_SHORT).show();
         myTfh.resetuserslistfromtemplate(getInputStream("proplist"), getFileOutputStream("proplist"), "proplist");
         myTfh.resetuserslistfromtemplate(getInputStream("patternlist"), getFileOutputStream("patternlist"), "patternlist");
         myTfh.resetuserslistfromtemplate(getInputStream("modifierlist"), getFileOutputStream("modifierlist"), "modifierlist");
@@ -551,6 +566,32 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         myTfh.resetuserslistfromtemplate(getInputStream("specialthrowsequencelist"), getFileOutputStream("specialthrowsequencelist"), "specialthrowsequencelist");
         fillListsFromTextFiles();
     }
+    public void showGivePermissionDialog() {
+        new AlertDialog.Builder(MainActivity.this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("Permission")
+                .setMessage("Permission denied. Would you like to grant permission?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent();
+                        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        Uri uri = Uri.fromParts("package", getPackageName(), null);
+                        intent.setData(uri);
+                        startActivity(intent);
+
+                    }
+                })
+
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                })
+                .show();
+    }
+
     public void resetuserslistfromtemplate(String listName){
         Log.d("myTfh", "resetuserslistfromtemplate");
         final int READ_BLOCK_SIZE = 100;
@@ -712,14 +753,18 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        //settings button
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Toast.makeText(getBaseContext(), "doFirstUseStuff()",Toast.LENGTH_SHORT).show();
-            doFirstUseStuff();
+            Toast.makeText(getBaseContext(), "settings clicked",Toast.LENGTH_SHORT).show();
+            if (myDb.importDatabase(getPackageName(), MainActivity.this) == false){
+                showGivePermissionDialog();
+            }
+            //doFirstUseStuff();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -742,35 +787,44 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 TODO
 -NEXT:
     -move some stuff into a new class, whatever it takes, we gotta be organized!!
+-Names of db columns:
+    -date/time
+    -site/name(string)
+    -number of objects(integer)
+    -prop(string)
+    -modifiers(string,comma separated, unlimited)
+    -special throws(string,comma separated, unlimited)
+    -special throws sequence(int,comma separated, unlimited)
 -TO MAKE DB:
-    -once all dialogs are complete, then do this
-    -when a run begins, check in db that columns exist for each
--design the inputs for pattern and modifiers. Probably both some kind of alertdialog popup.
-    -SPECIAL THROWS. needs an edittext for sequence input if applicable
--move phone brunn phone notes over here
--organize these notes
--next up stuff
-    -see if db stuff is working
-    -make import/export db stuff in settings
-    -see if anything we have now can be turned into its own class by modelling off of formics database helper(once its in here)
--when to update the db:
-    -if a few minutes pass of no runs
-    -when prop, pattern, or mod changes
-    -when mail button is clicked?
+    -every time the specifics change:
+        -if there were completed runs with the previous specifics, we upload them to the db, to do this:
+            -check if there are completed runs that have not been uploaded to the db yet, if there are..
+                -make a new row for each run and fill in the info of the runs
+        -once completed runs of the previous specifics have been uploaded:
+            -check the db for all runs which match the newly set specifics, get the personal bests for it and put them in a textview
+        -then we just start doing runs until we switch specifics and start the process over
+-We should upload completed runs to DB if:
+    -the app is being closed
+    -specifics change
+    -enough time has elapsed without a run
+    -maybe make an 'upload runs to db' button
+-beyond basics DB stuff we want:
+    -make easy way to input records in the past
+        -make import/export db stuff(prolly just put it in settings)
 -possible mail button uses
     -update db
     -ai coach(recommends patterns)
     -set by user in settings
 -a sound played when a run starts would get rid of the problem of runs accidentally being started and stopped in the background
 -once db is installed:
-    -show records at beginning of list, and also show all the history(but make records obvious), use dates by each duration
-    -make easy way to input records in the past
+
 -settings:
     -make another screen show when settings is clicked
     -buffer time
     -make sounds? set sounds?
     -make import/export db stuff
 -eventually
+    -maybe we will want to distiguish between intentional endings with drop, intentional with catch, unintentional with drop, unintentional with catch
     -make letters work for siteswaps
     -there can be an 'only show patterns/modifiers without history checkbox
     -swipping on number instead of it being a spinner(in the pattern dialog)
@@ -781,7 +835,6 @@ TODO
     -use calendar view to go back in time(maybe this could also be used to add past runs
     -an automatic throw count estimator for patterns that have had both time and throw data given
 -Things I don't understand
-    -private/public variables
     -static
 
 
