@@ -38,18 +38,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_SPECIALTHROWSEQUENCES = "SPECIALTHROWSEQUENCES";
     public static final String COL_LINK = "LINK";
 
-
-    //        -Names of db columns:
-//        -date/time
-//                -site/name(string)
-//                -number of objects(integer)
-//                -prop(string)
-//                -modifiers(string,comma separated, unlimited)
-//                -special throws(string,comma separated, unlimited)
-//        -special throws sequence(int,comma separated, unlimited)
-
-
-
     public DatabaseHelper(Context context) {
 
         super(context, DATABASE_NAME, null, 1);//this puts our database in cache so that every time'getWritableDatabase()'
@@ -64,7 +52,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("create table HISTORY (ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "DATE TEXT,NAME TEXT,NUMBER INTEGER,PROP TEXT,MODIFIERS TEXT,SPECIALTHROWS TEXT,SPECIALTHROWSEQUENCES INTEGER)");
 
-
         //fillDBwithDefaultValues();
     }
 
@@ -77,9 +64,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
     }
-
-    //TODO
-    //it would be nice to hook up exporting db so i can actually see the file
 
     //THIS WORKS
     //  this checks to see if the .db file exists

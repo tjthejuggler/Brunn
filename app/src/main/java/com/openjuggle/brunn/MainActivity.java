@@ -451,6 +451,41 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         });
     }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        //settings button
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            Toast.makeText(getBaseContext(), "settings clicked",Toast.LENGTH_SHORT).show();
+            if (myDb.importDatabase(getPackageName(), MainActivity.this) == false){
+                showGivePermissionDialog();
+            }
+            //doFirstUseStuff();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+    public void openbegindialog(){
+        inRun = true;
+    }
+    public void informationMenu() {
+        startActivity(new Intent("android.intent.action.INFOSCREEN"));
+    }
+    public void onClick(View v) {
+        // TODO Auto-generated method stub
+    }
+
+
     public void specificsChanged(){
 
 //        -TO MAKE DB:
@@ -467,8 +502,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 //                -enough time has elapsed without a run
 //        -maybe make an 'upload runs to db' button
     }
-
-
 
     public boolean firstuse(){
         Boolean toReturn = false;
@@ -590,32 +623,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     }
                 })
                 .show();
-    }
-
-    public void resetuserslistfromtemplate(String listName){
-        Log.d("myTfh", "resetuserslistfromtemplate");
-        final int READ_BLOCK_SIZE = 100;
-        try {
-            InputStream ins = getResources().openRawResource(getResources().getIdentifier
-                    (listName + "template", "raw", getPackageName()));
-            FileOutputStream fileout = openFileOutput(listName + ".txt", MODE_PRIVATE);
-            InputStreamReader InputRead= new InputStreamReader(ins);
-            char[] inputBuffer= new char[READ_BLOCK_SIZE];
-            String s="";
-            int charRead;
-            while ((charRead=InputRead.read(inputBuffer))>0) {
-                // char to string conversion
-                String readstring=String.copyValueOf(inputBuffer,0,charRead);
-                s +=readstring;
-            }
-            InputRead.close();
-            OutputStreamWriter outputWriter=new OutputStreamWriter(fileout);
-            outputWriter.write(s);
-            outputWriter.close();
-            Log.d("myTfh", "resetuserslistfromtemplate2");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public void fillListsFromTextFiles(){
@@ -745,56 +752,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         formattedTime += seconds ;
         return formattedTime;
     }
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        //settings button
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            Toast.makeText(getBaseContext(), "settings clicked",Toast.LENGTH_SHORT).show();
-            if (myDb.importDatabase(getPackageName(), MainActivity.this) == false){
-                showGivePermissionDialog();
-            }
-            //doFirstUseStuff();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-    public void openbegindialog(){
-        inRun = true;
-    }
-    public void informationMenu() {
-        startActivity(new Intent("android.intent.action.INFOSCREEN"));
-    }
-    public void onClick(View v) {
-        // TODO Auto-generated method stub
-    }
-
 
 
 }
 /*
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
-TODO
 -NEXT:
-    -move some stuff into a new class, whatever it takes, we gotta be organized!!
--Names of db columns:
-    -date/time
-    -site/name(string)
-    -number of objects(integer)
-    -prop(string)
-    -modifiers(string,comma separated, unlimited)
-    -special throws(string,comma separated, unlimited)
-    -special throws sequence(int,comma separated, unlimited)
+    do the stuff in specificsChanged()
+    make make a formatHelper class
+    make the settings activity
 -TO MAKE DB:
     -every time the specifics change:
         -if there were completed runs with the previous specifics, we upload them to the db, to do this:
@@ -810,7 +776,6 @@ TODO
     -maybe make an 'upload runs to db' button
 -beyond basics DB stuff we want:
     -make easy way to input records in the past
-        -make import/export db stuff(prolly just put it in settings)
 -possible mail button uses
     -update db
     -ai coach(recommends patterns)
