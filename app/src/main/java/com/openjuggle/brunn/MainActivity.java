@@ -1,48 +1,27 @@
 
 package com.openjuggle.brunn;
-
 import android.net.Uri;
 import android.provider.Settings;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.SearchManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Bundle;
-import android.app.Activity;
 import android.content.Intent;
-import android.os.CountDownTimer;
 import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -56,61 +35,58 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.Checkable;
 import android.widget.CompoundButton;
 import android.widget.ListView;
-import android.speech.RecognizerIntent;
-import android.support.v4.app.NavUtils;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.MultiAutoCompleteTextView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 public class MainActivity extends AppCompatActivity implements OnClickListener {
     DatabaseHelper myDb;
     TextFileHelper myTfh;
+    FormatHelper myFh;
     String dbName = "brunn.db";
-    AutoCompleteTextView choosepatterndialogactv;
-    List<String> listOfListNames = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
+    AutoCompleteTextView choose_pattern_dialog_actv;
+    List<String> list_of_list_names = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
     int currentVolume;
-    public int runduration;
-    public int starttimeoflastrun = 0;
-    private TextView proptextview;
-    private TextView patterntextview;
-    private TextView modifiertextview;
-    private TextView specialthrowtextview;
-    List<String> listofprops = new LinkedList<>();
-    List<Integer> listofnumbers = new LinkedList<>();
-    List<String> listofpatterns = new LinkedList<>();
-    List<String> listofmodifiers = new LinkedList<>();
-    List<String> listofspecialthrows = new LinkedList<>();
-    List<String> listofspecialthrowsequences = new LinkedList<>();
-    private ListView runslistview;
-    private ArrayAdapter<String> runslistviewadapter;
-    private ArrayList<String> runsarraylist;
-    Handler volumechecker = new Handler();
+    public int run_duration;
+    public int start_time_of_last_run = 0;
+    private TextView prop_textview;
+    private TextView pattern_textview;
+    private TextView modifier_textview;
+    private TextView special_throw_textview;
+    List<String> list_of_props = new LinkedList<>();
+    List<Integer> list_of_numbers = new LinkedList<>();
+    List<String> list_of_patterns = new LinkedList<>();
+    List<String> list_of_modifiers = new LinkedList<>();
+    List<String> list_of_special_throws = new LinkedList<>();
+    List<String> list_of_special_throw_sequences = new LinkedList<>();
+    private ListView runs_listview;
+    private ArrayAdapter<String> runs_listviewadapter;
+    private ArrayList<String> runs_arraylist;
+    Handler volume_checker = new Handler();
     int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
     Runnable runnable;
     private float x1,x2;
     static final int MIN_DISTANCE = 150;
-    private int propTextViewCycleIndex = 0;
+    private int prop_text_viewCycleIndex = 0;
 
     @SuppressLint("ClickableViewAccessibility")
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         myTfh = new TextFileHelper(this);//creates an object from our database class over in DatabaseHelper
+        myFh = new FormatHelper();
         //fillMaps();
-        proptextview = findViewById(R.id.proptextview);
-        proptextview.setOnTouchListener(new View.OnTouchListener() {
+        prop_textview = findViewById(R.id.proptextview);
+        prop_textview.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 Log.d("TAG", "onTouch");
@@ -122,47 +98,46 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     x2 = event.getX();
                     float deltaX = x2 - x1;
                     Log.d("TAG", Float.toString(deltaX));
-                    if (deltaX > MIN_DISTANCE)
-                    {
-                        propTextViewCycleIndex++;
-                        if (propTextViewCycleIndex==listofprops.size()){
-                            propTextViewCycleIndex = 0;
+                    if (deltaX > MIN_DISTANCE){
+                        prop_text_viewCycleIndex++;
+                        if (prop_text_viewCycleIndex==list_of_props.size()){
+                            prop_text_viewCycleIndex = 0;
                         }
-                        proptextview.setText(listofprops.get(propTextViewCycleIndex));
+                        prop_textview.setText(list_of_props.get(prop_text_viewCycleIndex));
                     }
-                    if (deltaX < -MIN_DISTANCE)
-                    {
-                        propTextViewCycleIndex--;
-                        if (propTextViewCycleIndex<0){
-                            propTextViewCycleIndex = listofprops.size()-1;
+                    if (deltaX < -MIN_DISTANCE){
+                        prop_text_viewCycleIndex--;
+                        if (prop_text_viewCycleIndex<0){
+                            prop_text_viewCycleIndex = list_of_props.size()-1;
                         }
-                        proptextview.setText(listofprops.get(propTextViewCycleIndex));
+                        prop_textview.setText(list_of_props.get(prop_text_viewCycleIndex));
                     }
+                    specifics_changed();
                 }
                 return true;
             }
         });
 
-        patterntextview = findViewById(R.id.patterntextview);
-        modifiertextview = findViewById(R.id.modifiertextview);
-        specialthrowtextview = findViewById(R.id.specialthrowtextview);
-        if(firstuse()){
-            doFirstUseStuff();
+        pattern_textview = findViewById(R.id.patterntextview);
+        modifier_textview = findViewById(R.id.modifiertextview);
+        special_throw_textview = findViewById(R.id.specialthrowtextview);
+        if(first_use_of_app()){
+            do_first_use_of_app_stuff();
         }
 
-        onCreateDatabase();
+        on_create_database();
         if (myDb.checkDataBase()){
             //myDb.clearTable("HISTORY");
             //boolean here = myDb.insertContact();
             //myDb.insertData("HISTORY", "PROP", "works");
             //myDb.updateData("HISTORY", "PROP", "ID", "TEST", "MYTEST" );
-            Toast.makeText(getBaseContext(), "In name column: "+myDb.getAllFromColumn("NAME").toString(), Toast.LENGTH_SHORT).show();
+            make_toast("In name column: "+myDb.getAllFromColumn("NAME").toString());
         }else{
-            Toast.makeText(getBaseContext(), "db doesnt exists", Toast.LENGTH_SHORT).show();
+            make_toast("db doesnt exists");
         }
-        setCurrentVolume();
+        set_current_volume();
         timertext = findViewById(R.id.timertext);
-        fillListsFromTextFiles();
+        fill_lists_from_text_files();
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -171,12 +146,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             @Override
             public void onClick(View view) {
                 if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
-                    showGivePermissionDialog();
+                    show_give_permission_dialog();
                 }
-
-                Toast.makeText(getBaseContext(), "fab", Toast.LENGTH_SHORT).show();
-                //doFirstUseStuff();
-                //myTfh.appendTextFile(getFileOutputAppendStream("patternlist"),"mytest2");
+                make_toast("fab");
+                //do_first_use_of_app_stuff();
+                //myTfh.appendTextFile(get_file_output_append_stream("patternlist"),"mytest2");
             }
         });
         final Button propbutton = findViewById(R.id.propbutton);
@@ -186,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_prop_dialog, null);
                 final AutoCompleteTextView choosepropdialogactv = view.findViewById(R.id.propinputactv);
                 ArrayAdapter<String> choosepropdialogactvAdapter =
-                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofprops);
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_props);
                 choosepropdialogactv.setAdapter(choosepropdialogactvAdapter);
                 choosepropdialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 choosepropdialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
@@ -203,10 +177,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choosepropdialogactv.getText().toString();
-                                proptextview.setText(userInput);
-                                if (!listofprops.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("proplist"),userInput);
-                                    listofprops.add(userInput);
+                                prop_textview.setText(userInput);
+                                specifics_changed();
+                                if (!list_of_props.contains(userInput)){
+                                    myTfh.appendTextFile(get_file_output_append_stream("proplist"),userInput);
+                                    list_of_props.add(userInput);
                                 }
 
                             }
@@ -217,42 +192,42 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         Resources.getSystem().getDisplayMetrics().heightPixels / 3);
             }
         });
-        final Button patternbutton = findViewById(R.id.patternbutton);
-        patternbutton.setOnClickListener(new View.OnClickListener() {
+        final Button change_pattern_button = findViewById(R.id.patternbutton);
+        change_pattern_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view2) {
                 final View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
-                choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
-                ArrayAdapter<String> choosepatterndialogactvAdapter =
-                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofpatterns);
-                choosepatterndialogactv.setAdapter(choosepatterndialogactvAdapter);
-                choosepatterndialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
-                choosepatterndialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
-                choosepatterndialogactv.setOnClickListener(new OnClickListener() {
+                choose_pattern_dialog_actv = view.findViewById(R.id.patterninputactv);
+                ArrayAdapter<String> choose_pattern_dialog_actvAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_patterns);
+                choose_pattern_dialog_actv.setAdapter(choose_pattern_dialog_actvAdapter);
+                choose_pattern_dialog_actv.setThreshold(0);//this is number of letters that must match for autocomplete
+                choose_pattern_dialog_actv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                choose_pattern_dialog_actv.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        choosepatterndialogactv.showDropDown();
+                        choose_pattern_dialog_actv.showDropDown();
                     }
                 });
-                final Spinner choosenumberdialogspinner = view.findViewById(R.id.numberspinner);
-                ArrayAdapter<Integer> choosenumberdialogspinnerAdapter =
-                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofnumbers);
-                choosenumberdialogspinner.setAdapter(choosenumberdialogspinnerAdapter);
-                choosenumberdialogspinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                final Spinner choose_number_spinner = view.findViewById(R.id.numberspinner);
+                ArrayAdapter<Integer> choose_number_spinnerAdapter =
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_numbers);
+                choose_number_spinner.setAdapter(choose_number_spinnerAdapter);
+                choose_number_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view2, int position, long id) {
-                        removeSiteswapsOfOtherNumbers(position+1);
-                        Collections.sort(listofpatterns);
-                        choosepatterndialogactv = view.findViewById(R.id.patterninputactv);
+                        remove_siteswaps_of_other_numbers(position+1);
+                        Collections.sort(list_of_patterns);
+                        choose_pattern_dialog_actv = view.findViewById(R.id.patterninputactv);
                         ArrayAdapter<String> adapter =
-                                new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofpatterns);
-                        choosepatterndialogactv.setAdapter(adapter);
-                        choosepatterndialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
-                        choosepatterndialogactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
-                        choosepatterndialogactv.setOnClickListener(new OnClickListener() {
+                                new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_patterns);
+                        choose_pattern_dialog_actv.setAdapter(adapter);
+                        choose_pattern_dialog_actv.setThreshold(0);//this is number of letters that must match for autocomplete
+                        choose_pattern_dialog_actv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                        choose_pattern_dialog_actv.setOnClickListener(new OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                choosepatterndialogactv.showDropDown();
+                                choose_pattern_dialog_actv.showDropDown();
                             }
                         });
                     }
@@ -270,7 +245,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     {
                         if ( isChecked )
                         {
-                            Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
+                            make_toast("is checked");
                         }
                     }
                 });
@@ -280,11 +255,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                String userInput = choosepatterndialogactv.getText().toString();
-                                patterntextview.setText(userInput);
-                                if (!listofpatterns.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("patternlist"),userInput);
-                                    listofpatterns.add(userInput);
+                                String userInput = choose_pattern_dialog_actv.getText().toString();
+                                pattern_textview.setText(userInput);
+                                specifics_changed();
+                                if (!list_of_patterns.contains(userInput)){
+                                    myTfh.appendTextFile(get_file_output_append_stream("patternlist"),userInput);
+                                    list_of_patterns.add(userInput);
                                 }
                             }
                         });
@@ -301,7 +277,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_modifier_dialog, null);
                 final MultiAutoCompleteTextView choosemodifierdialogactv = view.findViewById(R.id.modifierinputmactv);
                 ArrayAdapter<String> choosemodifierdialogactvAdapter =
-                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofmodifiers);
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_modifiers);
                 choosemodifierdialogactv.setAdapter(choosemodifierdialogactvAdapter);
                 choosemodifierdialogactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 choosemodifierdialogactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -321,7 +297,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     {
                         if ( isChecked )
                         {
-                            Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
+                            make_toast("is checked");
                             // perform your action here
                         }
 
@@ -334,10 +310,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choosemodifierdialogactv.getText().toString();
-                                modifiertextview.setText(userInput);
-                                if (!listofmodifiers.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("modifierlist"),userInput);
-                                    listofmodifiers.add(userInput);
+                                modifier_textview.setText(userInput);
+                                specifics_changed();
+                                if (!list_of_modifiers.contains(userInput)){
+                                    myTfh.appendTextFile(get_file_output_append_stream("modifierlist"),userInput);
+                                    list_of_modifiers.add(userInput);
                                 }
                             }
                         });
@@ -354,7 +331,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_special_throw_dialog, null);
                 final MultiAutoCompleteTextView choosespecialthrowdialogmactv = view.findViewById(R.id.specialthrowinputmactv);
                 ArrayAdapter<String> choosespecialthrowdialogactvAdapter =
-                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofspecialthrows);
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_special_throws);
                 choosespecialthrowdialogmactv.setAdapter(choosespecialthrowdialogactvAdapter);
                 choosespecialthrowdialogmactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 choosespecialthrowdialogmactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -367,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 });
                 final MultiAutoCompleteTextView specialthrowsequenceinputmactv = view.findViewById(R.id.specialthrowsequenceinputmactv);
                 ArrayAdapter<String> specialthrowsequenceinputmactvAdapter =
-                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, listofspecialthrowsequences);
+                        new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_special_throw_sequences);
                 specialthrowsequenceinputmactv.setAdapter(specialthrowsequenceinputmactvAdapter);
                 specialthrowsequenceinputmactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 specialthrowsequenceinputmactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
@@ -384,10 +361,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     @Override
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
                     {
-                        if ( isChecked )
-                        {
-                            Toast.makeText(MainActivity.this, "is checked", Toast.LENGTH_SHORT).show();
-                        }
+                        if(isChecked) make_toast("is checked");
                     }
                 });
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
@@ -397,17 +371,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choosespecialthrowdialogmactv.getText().toString();
-                                if (!listofspecialthrows.contains(userInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("specialthrowlist"),userInput);
-                                    listofspecialthrows.add(userInput);
+                                if (!list_of_special_throws.contains(userInput)){
+                                    myTfh.appendTextFile(get_file_output_append_stream("specialthrowlist"),userInput);
+                                    list_of_special_throws.add(userInput);
                                 }
                                 String specialThrowSequenceUserInput = specialthrowsequenceinputmactv.getText().toString();
-                                if (!listofspecialthrowsequences.contains(specialThrowSequenceUserInput)){
-                                    myTfh.appendTextFile(getFileOutputAppendStream("specialthrowsequencelist"),specialThrowSequenceUserInput);
-                                    listofspecialthrowsequences.add(userInput);
+                                if (!list_of_special_throw_sequences.contains(specialThrowSequenceUserInput)){
+                                    myTfh.appendTextFile(get_file_output_append_stream("specialthrowsequencelist"),specialThrowSequenceUserInput);
+                                    list_of_special_throw_sequences.add(userInput);
                                 }
-                                specialthrowtextview.setText(userInput+"/"+specialThrowSequenceUserInput);
-                                specificsChanged();
+                                special_throw_textview.setText(userInput+"/"+specialThrowSequenceUserInput);
+                                specifics_changed();
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
@@ -422,15 +396,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
-        runslistview = (ListView) findViewById(R.id.runslistview);
-        runsarraylist = new ArrayList<>();
-        runslistviewadapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, runsarraylist);
-        runslistview.setAdapter(runslistviewadapter);
+        runs_listview = (ListView) findViewById(R.id.runslistview);
+        runs_arraylist = new ArrayList<>();
+        runs_listviewadapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, runs_arraylist);
+        runs_listview.setAdapter(runs_listviewadapter);
         startbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if (!inRun) {
-                    beginrun();
+                    begin_run();
                 }
             }
         });
@@ -438,7 +412,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             @Override
             public void onClick(View view) {
                 if (inRun) {
-                    endrun("catch");
+                    end_run("catch");
                 }
             }
         });
@@ -446,7 +420,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             @Override
             public void onClick(View view) {
                 if (inRun) {
-                    endrun("drop");
+                    end_run("drop");
                 }
             }
         });
@@ -466,11 +440,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         int id = item.getItemId();
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Toast.makeText(getBaseContext(), "settings clicked",Toast.LENGTH_SHORT).show();
-            if (myDb.importDatabase(getPackageName(), MainActivity.this) == false){
-                showGivePermissionDialog();
-            }
-            //doFirstUseStuff();
+            make_toast("settings clicked");
+            if (myDb.importDatabase(getPackageName(), MainActivity.this) == false) show_give_permission_dialog();
+            //do_first_use_of_app_stuff();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -484,14 +456,19 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void onClick(View v) {
         // TODO Auto-generated method stub
     }
+    public void make_toast(String toastMessage){
+        Toast.makeText(getBaseContext(), toastMessage,Toast.LENGTH_SHORT).show();
+    }
 
-
-    public void specificsChanged(){
-
+    public void specifics_changed(){
+        make_toast("specifics_changed");
 //        -TO MAKE DB:
 //        -every time the specifics change:
 //        -if there were completed runs with the previous specifics, we upload them to the db, to do this:
 //        -check if there are completed runs that have not been uploaded to the db yet, if there are..
+        if (there_are_completed_runs_not_yet_added_to_the_database()){
+            
+        }
 //        -make a new row for each run and fill in the info of the runs
 //        -once completed runs of the previous specifics have been uploaded:
 //        -check the db for all runs which match the newly set specifics, get the personal bests for it and put them in a textview
@@ -502,8 +479,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 //                -enough time has elapsed without a run
 //        -maybe make an 'upload runs to db' button
     }
+    
+    public boolean there_are_completed_runs_not_yet_added_to_the_database(){
+        boolean toReturn = false;
+        return toReturn;
+    }
 
-    public boolean firstuse(){
+    public boolean first_use_of_app(){
         Boolean toReturn = false;
         try {
             FileInputStream fileIn=openFileInput("patternlist.txt");
@@ -514,7 +496,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         return toReturn;
     }
 
-    public void onCreateDatabase(){
+    public void on_create_database(){
         File file = this.getDatabasePath(dbName);
         if (!file.exists()) {
             Log.d("didntexist", "5");
@@ -526,11 +508,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
         }
     }
-    public void removeSiteswapsOfOtherNumbers(int objectNumber){
-        Log.d("TAG", "listofpatterns.size"+listofpatterns.size());
-        listofpatterns = myTfh.fillListFromTextFile(getFileInputStream("patternlist"));
+    public void remove_siteswaps_of_other_numbers(int objectNumber){
+        Log.d("TAG", "list_of_patterns.size"+list_of_patterns.size());
+        list_of_patterns = myTfh.fillListFromTextFile(get_file_input_stream("patternlist"));
         List<String> toRemove = new ArrayList<>();
-        for (String pattern : listofpatterns){
+        for (String pattern : list_of_patterns){
             if (pattern.matches("[0-9]+")){
                 int sum = 0;
                 for (char c: pattern.toCharArray()) {
@@ -544,14 +526,14 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         }
         for (String itemToRemove : toRemove) {
-            Log.d("TAG", "itemToRemove."+itemToRemove);
-            //Toast.makeText(getBaseContext(), "itemToRemove."+itemToRemove,Toast.LENGTH_SHORT).show();
-            if (listofpatterns.contains(itemToRemove)) {
-                listofpatterns.remove(itemToRemove);
+            //Log.d("TAG", "itemToRemove."+itemToRemove);
+            //make_toast("itemToRemove."+itemToRemove);
+            if (list_of_patterns.contains(itemToRemove)) {
+                list_of_patterns.remove(itemToRemove);
             }
         }
     }
-    public InputStream getInputStream(String listName){
+    public InputStream get_input_stream(String listName){
         InputStream ins = null;
         try {
             ins = getResources().openRawResource(getResources().getIdentifier
@@ -561,7 +543,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return ins;
     }
-    public FileInputStream getFileInputStream(String listName){
+    public FileInputStream get_file_input_stream(String listName){
         FileInputStream ins = null;
         try {
             ins = openFileInput(listName+".txt");
@@ -571,7 +553,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         return ins;
     }
 
-    public FileOutputStream getFileOutputStream(String listName){
+    public FileOutputStream get_file_output_stream(String listName){
         FileOutputStream fileout = null;
         try {
             fileout = openFileOutput(listName + ".txt", MODE_PRIVATE);
@@ -580,7 +562,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return fileout;
     }
-    public FileOutputStream getFileOutputAppendStream(String listName){
+    public FileOutputStream get_file_output_append_stream(String listName){
         FileOutputStream fileout = null;
         try {
             fileout = openFileOutput(listName + ".txt", MODE_PRIVATE | MODE_APPEND);
@@ -590,16 +572,16 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         return fileout;
     }
 
-    public void doFirstUseStuff() {
-        Toast.makeText(getBaseContext(), "doFirstUseStuff()",Toast.LENGTH_SHORT).show();
-        myTfh.resetuserslistfromtemplate(getInputStream("proplist"), getFileOutputStream("proplist"), "proplist");
-        myTfh.resetuserslistfromtemplate(getInputStream("patternlist"), getFileOutputStream("patternlist"), "patternlist");
-        myTfh.resetuserslistfromtemplate(getInputStream("modifierlist"), getFileOutputStream("modifierlist"), "modifierlist");
-        myTfh.resetuserslistfromtemplate(getInputStream("specialthrowlist"), getFileOutputStream("specialthrowlist"), "specialthrowlist");
-        myTfh.resetuserslistfromtemplate(getInputStream("specialthrowsequencelist"), getFileOutputStream("specialthrowsequencelist"), "specialthrowsequencelist");
-        fillListsFromTextFiles();
+    public void do_first_use_of_app_stuff() {
+        make_toast("do_first_use_of_app_stuff()");
+        myTfh.resetuserslistfromtemplate(get_input_stream("proplist"), get_file_output_stream("proplist"), "proplist");
+        myTfh.resetuserslistfromtemplate(get_input_stream("patternlist"), get_file_output_stream("patternlist"), "patternlist");
+        myTfh.resetuserslistfromtemplate(get_input_stream("modifierlist"), get_file_output_stream("modifierlist"), "modifierlist");
+        myTfh.resetuserslistfromtemplate(get_input_stream("specialthrowlist"), get_file_output_stream("specialthrowlist"), "specialthrowlist");
+        myTfh.resetuserslistfromtemplate(get_input_stream("specialthrowsequencelist"), get_file_output_stream("specialthrowsequencelist"), "specialthrowsequencelist");
+        fill_lists_from_text_files();
     }
-    public void showGivePermissionDialog() {
+    public void show_give_permission_dialog() {
         new AlertDialog.Builder(MainActivity.this)
                 .setIcon(android.R.drawable.ic_dialog_alert)
                 .setTitle("Permission")
@@ -619,25 +601,24 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-
                     }
                 })
                 .show();
     }
 
-    public void fillListsFromTextFiles(){
-        listofnumbers.clear();
+    public void fill_lists_from_text_files(){
+        list_of_numbers.clear();
         for (int i = 1; i <= 13; i++) {
-            listofnumbers.add(i);
+            list_of_numbers.add(i);
         }
-            listofprops = myTfh.fillListFromTextFile(getFileInputStream("proplist"));
-            listofpatterns = myTfh.fillListFromTextFile(getFileInputStream("patternlist"));
-            listofmodifiers = myTfh.fillListFromTextFile(getFileInputStream("modifierlist"));
-            listofspecialthrows = myTfh.fillListFromTextFile(getFileInputStream("specialthrowlist"));
-            listofspecialthrowsequences = myTfh.fillListFromTextFile(getFileInputStream("specialthrowsequencelist"));
+            list_of_props = myTfh.fillListFromTextFile(get_file_input_stream("proplist"));
+            list_of_patterns = myTfh.fillListFromTextFile(get_file_input_stream("patternlist"));
+            list_of_modifiers = myTfh.fillListFromTextFile(get_file_input_stream("modifierlist"));
+            list_of_special_throws = myTfh.fillListFromTextFile(get_file_input_stream("specialthrowlist"));
+            list_of_special_throw_sequences = myTfh.fillListFromTextFile(get_file_input_stream("specialthrowsequencelist"));
             Log.d("trytry", "1 ");
     }
-    public void addDataToDB(String table, String col, String textToAdd) {
+    public void add_data_to_database(String table, String col, String textToAdd) {
         //this calls up 'insertData' from DatabaseHelper and inserts the user provided add
         //      the EditTexts from above which were taken from our Layout
         boolean isInserted = myDb.insertData(table, col, textToAdd);
@@ -646,72 +627,62 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     @Override
     protected void onResume() {
         // start handler as activity become visible
-        volumechecker.postDelayed( runnable = new Runnable() {
+        volume_checker.postDelayed( runnable = new Runnable() {
             public void run() {
                 Boolean volumeWentDown = false;
                 Boolean volumeWentUp = false;
                 AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-                if (currentVolume > audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
-                    volumeWentDown = true;
-                }
-                if (currentVolume < audio.getStreamVolume(AudioManager.STREAM_MUSIC)){
-                    volumeWentUp = true;
-                }
+                if (currentVolume > audio.getStreamVolume(AudioManager.STREAM_MUSIC)) volumeWentDown = true;
+                if (currentVolume < audio.getStreamVolume(AudioManager.STREAM_MUSIC)) volumeWentUp = true;
                 if (!inRun){
-                    if (volumeWentDown || volumeWentUp){
-                        beginrun();
-                    }
+                    if (volumeWentDown || volumeWentUp) begin_run();
                 }else if (inRun){
-                    if (volumeWentDown){
-                        endrun("drop");
-                    }
-                    if (volumeWentUp){
-                        endrun("catch");
-                    }
+                    if (volumeWentDown) end_run("drop");
+                    if (volumeWentUp) end_run("catch");
                 }
-                volumechecker.postDelayed(runnable, delay);
+                volume_checker.postDelayed(runnable, delay);
             }
         }, delay);
         super.onResume();
     }
     @Override
     protected void onPause() {
-        volumechecker.removeCallbacks(runnable); //stop handler when activity not visible
+        volume_checker.removeCallbacks(runnable); //stop handler when activity not visible
         super.onPause();
     }
-    public void setCurrentVolume(){
+    public void set_current_volume(){
         AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
     }
-    public void beginrun(){
-        //Toast.makeText(MainActivity.this, "beginrun()", Toast.LENGTH_SHORT).show();
+    public void begin_run(){
+        //make_toast("begin_run()");
         long tsLong = System.currentTimeMillis()/1000;
-        starttimeoflastrun = (int)tsLong;
+        start_time_of_last_run = (int)tsLong;
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
         startbutton.setVisibility(View.GONE);
         dropbutton.setVisibility(View.VISIBLE);
         catchbutton.setVisibility(View.VISIBLE);
-        startTimer();
+        start_timer();
         inRun = true;
-        setCurrentVolume();
+        set_current_volume();
     }
-    public void endrun(String endtype){
+    public void end_run(String endtype){
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
-        setCurrentVolume();
+        set_current_volume();
         timer.cancel();
         timer.purge();
         inRun = false;
-        runsarraylist.add(formatSeconds(runduration)+" ("+endtype+")");
-        runslistviewadapter.notifyDataSetChanged();
+        runs_arraylist.add(myFh.formatSeconds(run_duration)+" ("+endtype+")");
+        runs_listviewadapter.notifyDataSetChanged();
     }
-    public void startTimer() {
+    public void start_timer() {
         timer = new Timer();
         TimerTask timerTask = new TimerTask() {
             @Override
@@ -721,9 +692,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     public void run() {
                         if (inRun) {
                             long tsLong = System.currentTimeMillis()/1000;
-                            int currenttime = (int)tsLong;
-                            runduration = currenttime - starttimeoflastrun;
-                            timertext.setText(formatSeconds(runduration));
+                            int current_time = (int)tsLong;
+                            run_duration = current_time - start_time_of_last_run;
+                            timertext.setText(myFh.formatSeconds(run_duration));
                         }else{
                             timer.cancel();
                             timer.purge();
@@ -734,31 +705,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         };
         timer.scheduleAtFixedRate(timerTask, 0, 1000);
     }
-    public static String formatSeconds(int timeInSeconds)
-    {
-        int hours = timeInSeconds / 3600;
-        int secondsLeft = timeInSeconds - hours * 3600;
-        int minutes = secondsLeft / 60;
-        int seconds = secondsLeft - minutes * 60;
-        String formattedTime = "";
-        if (hours < 10)
-            formattedTime += "0";
-        formattedTime += hours + ":";
-        if (minutes < 10)
-            formattedTime += "0";
-        formattedTime += minutes + ":";
-        if (seconds < 10)
-            formattedTime += "0";
-        formattedTime += seconds ;
-        return formattedTime;
-    }
-
 
 }
 /*
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
 -NEXT:
-    do the stuff in specificsChanged()
+    do the stuff in specifics_changed()
     make make a formatHelper class
     make the settings activity
 -TO MAKE DB:
