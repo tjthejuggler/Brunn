@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
+    public Boolean there_are_completed_runs_not_yet_added_to_database;
     int currentVolume;
     public int run_duration;
     public int start_time_of_last_run = 0;
@@ -462,28 +463,34 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     public void specifics_changed(){
         make_toast("specifics_changed");
-//        -TO MAKE DB:
-//        -every time the specifics change:
-//        -if there were completed runs with the previous specifics, we upload them to the db, to do this:
-//        -check if there are completed runs that have not been uploaded to the db yet, if there are..
-        if (there_are_completed_runs_not_yet_added_to_the_database()){
-            
+        if (there_are_completed_runs_not_yet_added_to_database) {
+            add_completed_runs_to_database();
         }
-//        -make a new row for each run and fill in the info of the runs
-//        -once completed runs of the previous specifics have been uploaded:
-//        -check the db for all runs which match the newly set specifics, get the personal bests for it and put them in a textview
-//                -then we just start doing runs until we switch specifics and start the process over
-//        -We should upload completed runs to DB if:
-//        -the app is being closed
-//        -specifics change
-//                -enough time has elapsed without a run
-//        -maybe make an 'upload runs to db' button
+        update_personal_best_textview();
     }
-    
-    public boolean there_are_completed_runs_not_yet_added_to_the_database(){
-        boolean toReturn = false;
-        return toReturn;
+
+    //todo:
+    //put add_completed_runs_to_database where it needs to be:
+    //        -We should upload completed runs to DB if:
+    //          -the app is being closed
+    //          -specifics change
+    //                -enough time has elapsed without a run
+    //          -maybe make an 'upload runs to db' button
+    public void add_completed_runs_to_database(){
+        there_are_completed_runs_not_yet_added_to_database = false;
+        //todo:
+        //-make a new row for each run and fill in the info of the runs
+        //  -when a run ends we should not just add it to the listview, we should also be filling up a 2D list(list_of_runs_not_yet_added_to_database)
+        //          with the info on the run
+        //  -the 2D list(list_of_runs_not_yet_added_to_database) is what we use HERE to fill up our database, when we do that we should empty the list
     }
+
+    public void update_personal_best_textview(){
+        //todo:
+        //-make the personal_best_textview
+//        -check the db for all runs which match the specifics, get the personal bests for it and put them in a textview
+    }
+
 
     public boolean first_use_of_app(){
         Boolean toReturn = false;
@@ -681,6 +688,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         inRun = false;
         runs_arraylist.add(myFh.formatSeconds(run_duration)+" ("+endtype+")");
         runs_listviewadapter.notifyDataSetChanged();
+        there_are_completed_runs_not_yet_added_to_database = true;
     }
     public void start_timer() {
         timer = new Timer();
