@@ -30,6 +30,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -55,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
-    public Boolean there_are_completed_runs_not_yet_added_to_database;
+    public Boolean there_are_completed_runs_not_yet_added_to_db;
     int currentVolume;
     public int run_duration;
     public int start_time_of_last_run = 0;
@@ -126,7 +127,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             do_first_use_of_app_stuff();
         }
 
-        on_create_database();
+        on_create_db();
         if (myDb.checkDataBase()){
             //myDb.clearTable("HISTORY");
             //boolean here = myDb.insertContact();
@@ -463,26 +464,19 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     public void specifics_changed(){
         make_toast("specifics_changed");
-        if (there_are_completed_runs_not_yet_added_to_database) {
-            add_completed_runs_to_database();
+        if (there_are_completed_runs_not_yet_added_to_db) {
+            add_completed_runs_to_db();
         }
         update_personal_best_textview();
     }
 
-    //todo:
-    //put add_completed_runs_to_database where it needs to be:
-    //        -We should upload completed runs to DB if:
-    //          -the app is being closed
-    //          -specifics change
-    //                -enough time has elapsed without a run
-    //          -maybe make an 'upload runs to db' button
-    public void add_completed_runs_to_database(){
-        there_are_completed_runs_not_yet_added_to_database = false;
+    public void add_completed_runs_to_db(){
+        there_are_completed_runs_not_yet_added_to_db = false;
         //todo:
         //-make a new row for each run and fill in the info of the runs
-        //  -when a run ends we should not just add it to the listview, we should also be filling up a 2D list(list_of_runs_not_yet_added_to_database)
+        //  -when a run ends we should not just add it to the listview, we should also be filling up a 2D list(list_of_runs_not_yet_added_to_db)
         //          with the info on the run
-        //  -the 2D list(list_of_runs_not_yet_added_to_database) is what we use HERE to fill up our database, when we do that we should empty the list
+        //  -the 2D list(list_of_runs_not_yet_added_to_db) is what we use HERE to fill up our db, when we do that we should empty the list
     }
 
     public void update_personal_best_textview(){
@@ -503,13 +497,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         return toReturn;
     }
 
-    public void on_create_database(){
+    public void on_create_db(){
         File file = this.getDatabasePath(dbName);
         if (!file.exists()) {
             Log.d("didntexist", "5");
-            //if the database doesn't currently exist, then this is the first time the app has been run and we need to add
-            //      the stuff to the database to make the default settings
-            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
+            //if the db doesn't currently exist, then this is the first time the app has been run and we need to add
+            //      the stuff to the db to make the default settings
+            myDb = new DatabaseHelper(this);//creates an object from our db class over in DatabaseHelper
             //addFirstTimeRunDatabaseData();
         } else {
             myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
@@ -625,7 +619,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             list_of_special_throw_sequences = myTfh.fillListFromTextFile(get_file_input_stream("specialthrowsequencelist"));
             Log.d("trytry", "1 ");
     }
-    public void add_data_to_database(String table, String col, String textToAdd) {
+    public void add_data_to_db(String table, String col, String textToAdd) {
         //this calls up 'insertData' from DatabaseHelper and inserts the user provided add
         //      the EditTexts from above which were taken from our Layout
         boolean isInserted = myDb.insertData(table, col, textToAdd);
@@ -654,6 +648,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
     @Override
     protected void onPause() {
+        add_completed_runs_to_db();
         volume_checker.removeCallbacks(runnable); //stop handler when activity not visible
         super.onPause();
     }
@@ -663,6 +658,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
     public void begin_run(){
         //make_toast("begin_run()");
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         long tsLong = System.currentTimeMillis()/1000;
         start_time_of_last_run = (int)tsLong;
         final Button startbutton = findViewById(R.id.startbutton);
@@ -679,6 +675,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
@@ -688,7 +685,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         inRun = false;
         runs_arraylist.add(myFh.formatSeconds(run_duration)+" ("+endtype+")");
         runs_listviewadapter.notifyDataSetChanged();
-        there_are_completed_runs_not_yet_added_to_database = true;
+        there_are_completed_runs_not_yet_added_to_db = true;
+        timertext.setText(myFh.formatSeconds(0));
     }
     public void start_timer() {
         timer = new Timer();
@@ -759,6 +757,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     -make graphs of progress
     -use calendar view to go back in time(maybe this could also be used to add past runs
     -an automatic throw count estimator for patterns that have had both time and throw data given
+    -maybe make an 'upload runs to db' button
 -Things I don't understand
     -static
 
