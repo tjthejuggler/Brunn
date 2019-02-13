@@ -145,11 +145,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                make_toast("fab");
                 if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
                     show_give_permission_dialog();
                 }
-
-                make_toast("fab");
                 //do_first_use_of_app_stuff();
                 //myTfh.appendTextFile(get_file_output_append_stream("patternlist"),"mytest2");
             }
@@ -485,9 +484,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 
     public void update_personal_best_textview(){
-        //todo:
-        //personal_best_textview.setText("fabClicked");
-//        -check the db for all runs which match the specifics, get the personal bests for it and put them in personal_best_textview
+        String special_throws_to_insert = "";
+        String special_throw_sequences_to_insert = "";
+        if (special_throw_textview.getText().toString().contains("/")){
+            special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
+            special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
+        }
+        String catch_pb = myDb.getPersonalBestFromSpecifics(pattern_textview.getText().toString().split(" / objs:")[0],"catch",
+                pattern_textview.getText().toString().split(" / objs:")[1],prop_textview.getText().toString(),
+                modifier_textview.getText().toString(),special_throws_to_insert, special_throw_sequences_to_insert);
+
+        String drop_pb = myDb.getPersonalBestFromSpecifics(pattern_textview.getText().toString().split(" / objs:")[0],"drop",
+                pattern_textview.getText().toString().split(" / objs:")[1],prop_textview.getText().toString(),
+                modifier_textview.getText().toString(),special_throws_to_insert, special_throw_sequences_to_insert);
+
+        personal_best_textview.setText("Personal Best - Catch: "+catch_pb+"  Drop: "+drop_pb);
     }
 
 
@@ -694,6 +705,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         add_completed_run_to_db(endtype);
         //there_are_completed_runs_not_yet_added_to_db = true;
         timertext.setText(myFh.formatSeconds(0));
+        update_personal_best_textview();
     }
     public void add_completed_run_to_db(String endtype){
         Calendar c = Calendar.getInstance();
