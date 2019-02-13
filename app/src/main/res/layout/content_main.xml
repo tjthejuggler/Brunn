@@ -26,9 +26,8 @@
         android:layout_width="395dp"
         android:layout_height="264dp"
         android:layout_marginLeft="16dp"
-        android:layout_marginTop="8dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/dropbutton" />
+        app:layout_constraintTop_toBottomOf="@+id/personalbesttextview" />
 
     <Button
         android:id="@+id/startbutton"
@@ -98,7 +97,6 @@
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
-        android:text="default.patterntextview.text"
         app:layout_constraintStart_toEndOf="@+id/patternbutton"
         app:layout_constraintTop_toTopOf="@+id/patternbutton" />
 
@@ -109,7 +107,6 @@
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
-        android:text="default.modifiertextview.text"
         app:layout_constraintStart_toEndOf="@+id/modifierbutton"
         app:layout_constraintTop_toTopOf="@+id/modifierbutton" />
 
@@ -120,7 +117,6 @@
         android:layout_marginStart="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginTop="8dp"
-        android:text="default.special.throwtextview.text"
         app:layout_constraintStart_toEndOf="@+id/specialthrowbutton"
         app:layout_constraintTop_toTopOf="@+id/specialthrowbutton" />
 
@@ -142,9 +138,18 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
-        android:text="default.proptextview.text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/patterntextview"
         app:layout_constraintTop_toTopOf="@+id/propbutton" />
+
+    <TextView
+        android:id="@+id/personalbesttextview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginLeft="8dp"
+        android:text="Personal Best:"
+        app:layout_constraintStart_toStartOf="@+id/dropbutton"
+        app:layout_constraintTop_toBottomOf="@+id/dropbutton" />
 
 </android.support.constraint.ConstraintLayout>

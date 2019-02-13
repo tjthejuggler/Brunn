@@ -29,14 +29,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //              uninstalling and recreating the same DB doesn't work
     public static final String DATABASE_NAME = "brunn.db";
     public static final String TABLE_NAME = "HISTORY";
-    public static final String COL_DATE = "DATE";
-    public static final String COL_NAME = "NAME";
-    public static final String COL_NUMBER = "NUMBER";
-    public static final String COL_PROP = "PROP";
-    public static final String COL_MODIFIERS = "MODIFIERS";
-    public static final String COL_SPECIALTHROWS = "SPECIALTHROWS";
-    public static final String COL_SPECIALTHROWSEQUENCES = "SPECIALTHROWSEQUENCES";
-    public static final String COL_LINK = "LINK";
+
 
     public DatabaseHelper(Context context) {
 
@@ -50,7 +43,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         //'db.execSQL' executes whatever SQLite command(quarry) we give after it
         //in this case it creates our 4 tables
         db.execSQL("create table HISTORY (ID INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "DATE TEXT,NAME TEXT,NUMBER INTEGER,PROP TEXT,MODIFIERS TEXT,SPECIALTHROWS TEXT,SPECIALTHROWSEQUENCES INTEGER)");
+                "DATE TEXT,NAME TEXT,DURATION TEXT,ENDTYPE TEXT,NUMBER INTEGER,PROP TEXT,MODIFIERS TEXT,SPECIALTHROWS TEXT,SPECIALTHROWSEQUENCES INTEGER)");
 
         //fillDBwithDefaultValues();
     }
@@ -84,10 +77,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     //THIS WORKS
-    public boolean insertContact () {
+    public boolean insertRun (String date_to_insert,String name_to_insert,String duration_to_insert,String endtype_to_insert,String number_to_insert,String prop_to_insert,
+                              String modifiers_to_insert, String special_throws_to_insert, String special_throw_sequences_to_insert) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
-        contentValues.put("PROP", "poop");
+        contentValues.put("DATE", date_to_insert);
+        contentValues.put("NAME", name_to_insert);
+        contentValues.put("DURATION", duration_to_insert);
+        contentValues.put("ENDTYPE", endtype_to_insert);
+        contentValues.put("NUMBER", number_to_insert);
+        contentValues.put("PROP", prop_to_insert);
+        contentValues.put("MODIFIERS", modifiers_to_insert);
+        contentValues.put("SPECIALTHROWS", special_throws_to_insert);
+        contentValues.put("SPECIALTHROWSEQUENCES", special_throw_sequences_to_insert);
         db.insert("HISTORY", null, contentValues);
         return true;
     }

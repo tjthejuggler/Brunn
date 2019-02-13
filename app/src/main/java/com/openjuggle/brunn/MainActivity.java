@@ -6,8 +6,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private TextView pattern_textview;
     private TextView modifier_textview;
     private TextView special_throw_textview;
+    private TextView personal_best_textview;
     List<String> list_of_props = new LinkedList<>();
     List<Integer> list_of_numbers = new LinkedList<>();
     List<String> list_of_patterns = new LinkedList<>();
@@ -88,6 +91,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         myFh = new FormatHelper();
         //fillMaps();
         prop_textview = findViewById(R.id.proptextview);
+        if(first_use_of_app()){
+            do_first_use_of_app_stuff();
+        }
+        on_create_db();
+        try {
+            prop_textview.setText(myDb.getAllFromColumn("PROP").get(myDb.getAllFromColumn("PROP").size()-1));
+        } catch (Exception e) {e.printStackTrace(); }
         prop_textview.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -123,20 +133,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         pattern_textview = findViewById(R.id.patterntextview);
         modifier_textview = findViewById(R.id.modifiertextview);
         special_throw_textview = findViewById(R.id.specialthrowtextview);
-        if(first_use_of_app()){
-            do_first_use_of_app_stuff();
-        }
+        personal_best_textview = findViewById(R.id.personalbesttextview);
 
-        on_create_db();
-        if (myDb.checkDataBase()){
-            //myDb.clearTable("HISTORY");
-            //boolean here = myDb.insertContact();
-            //myDb.insertData("HISTORY", "PROP", "works");
-            //myDb.updateData("HISTORY", "PROP", "ID", "TEST", "MYTEST" );
-            make_toast("In name column: "+myDb.getAllFromColumn("NAME").toString());
-        }else{
-            make_toast("db doesnt exists");
-        }
         set_current_volume();
         timertext = findViewById(R.id.timertext);
         fill_lists_from_text_files();
@@ -150,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
                     show_give_permission_dialog();
                 }
+
                 make_toast("fab");
                 //do_first_use_of_app_stuff();
                 //myTfh.appendTextFile(get_file_output_append_stream("patternlist"),"mytest2");
@@ -258,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choose_pattern_dialog_actv.getText().toString();
-                                pattern_textview.setText(userInput);
+                                pattern_textview.setText(userInput + " / objs:"+choose_number_spinner.getSelectedItem().toString());
                                 specifics_changed();
                                 if (!list_of_patterns.contains(userInput)){
                                     myTfh.appendTextFile(get_file_output_append_stream("patternlist"),userInput);
@@ -406,7 +405,20 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             @Override
             public void onClick(View view) {
                 if (!inRun) {
-                    begin_run();
+                    Boolean can_begin_run = true;
+                    if(prop_textview.getText().toString().equals("")) {
+                        can_begin_run = false;
+                        make_toast("select prop");
+                    }
+                    if (can_begin_run) {
+                        if (!pattern_textview.getText().toString().contains(" / objs:")) {
+                            can_begin_run = false;
+                            make_toast("select pattern");
+                        }
+                    }
+                    if (can_begin_run) {
+                        begin_run();
+                    }
                 }
             }
         });
@@ -443,8 +455,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             make_toast("settings clicked");
-            if (myDb.importDatabase(getPackageName(), MainActivity.this) == false) show_give_permission_dialog();
-            //do_first_use_of_app_stuff();
+            //if (myDb.importDatabase(getPackageName(), MainActivity.this) == false) show_give_permission_dialog();
+            do_first_use_of_app_stuff();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -464,25 +476,18 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     public void specifics_changed(){
         make_toast("specifics_changed");
-        if (there_are_completed_runs_not_yet_added_to_db) {
-            add_completed_runs_to_db();
-        }
+        //if (there_are_completed_runs_not_yet_added_to_db) {
+        //    add_completed_runs_to_db();
+        //}
         update_personal_best_textview();
     }
 
-    public void add_completed_runs_to_db(){
-        there_are_completed_runs_not_yet_added_to_db = false;
-        //todo:
-        //-make a new row for each run and fill in the info of the runs
-        //  -when a run ends we should not just add it to the listview, we should also be filling up a 2D list(list_of_runs_not_yet_added_to_db)
-        //          with the info on the run
-        //  -the 2D list(list_of_runs_not_yet_added_to_db) is what we use HERE to fill up our db, when we do that we should empty the list
-    }
+
 
     public void update_personal_best_textview(){
         //todo:
-        //-make the personal_best_textview
-//        -check the db for all runs which match the specifics, get the personal bests for it and put them in a textview
+        //personal_best_textview.setText("fabClicked");
+//        -check the db for all runs which match the specifics, get the personal bests for it and put them in personal_best_textview
     }
 
 
@@ -648,7 +653,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
     @Override
     protected void onPause() {
-        add_completed_runs_to_db();
+        //add_completed_runs_to_db();
         volume_checker.removeCallbacks(runnable); //stop handler when activity not visible
         super.onPause();
     }
@@ -684,9 +689,26 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         timer.purge();
         inRun = false;
         runs_arraylist.add(myFh.formatSeconds(run_duration)+" ("+endtype+")");
+
         runs_listviewadapter.notifyDataSetChanged();
-        there_are_completed_runs_not_yet_added_to_db = true;
+        add_completed_run_to_db(endtype);
+        //there_are_completed_runs_not_yet_added_to_db = true;
         timertext.setText(myFh.formatSeconds(0));
+    }
+    public void add_completed_run_to_db(String endtype){
+        Calendar c = Calendar.getInstance();
+        System.out.println("Current time => "+c.getTime());
+        String special_throws_to_insert = "";
+        String special_throw_sequences_to_insert = "";
+        if (special_throw_textview.getText().toString().contains("/")){
+            special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
+            special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
+        }
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formattedDate = df.format(c.getTime());
+        myDb.insertRun ( formattedDate, pattern_textview.getText().toString().split(" / objs:")[0], String.valueOf(run_duration),endtype,
+                pattern_textview.getText().toString().split(" / objs:")[1], prop_textview.getText().toString(),
+                modifier_textview.getText().toString(), special_throws_to_insert , special_throw_sequences_to_insert);
     }
     public void start_timer() {
         timer = new Timer();
