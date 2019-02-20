@@ -1,6 +1,6 @@
-balls
-beanbag
-bounce
-clubs
-ring
-flowersticks
+Balls
+Beanbags
+Bounce
+Clubs
+Rings
+Flowersticks

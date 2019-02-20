@@ -48,6 +48,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.series.DataPoint;
+import com.jjoe64.graphview.series.LineGraphSeries;
+
 public class MainActivity extends AppCompatActivity implements OnClickListener {
     DatabaseHelper myDb;
     TextFileHelper myTfh;
@@ -55,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     String dbName = "brunn.db";
     AutoCompleteTextView choose_pattern_dialog_actv;
     List<String> list_of_list_names = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
+    LineGraphSeries<DataPoint> graphseries;
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
@@ -146,9 +150,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             @Override
             public void onClick(View view) {
                 make_toast("fab");
-                if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
-                    show_give_permission_dialog();
-                }
+                import_db();
+
+                //do_first_use_of_app_stuff();
+
                 //do_first_use_of_app_stuff();
                 //myTfh.appendTextFile(get_file_output_append_stream("patternlist"),"mytest2");
             }
@@ -390,6 +395,27 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         Resources.getSystem().getDisplayMetrics().heightPixels / 2);
             }
         });
+        final Button showgraphbutton = findViewById(R.id.show_graph_button);
+        showgraphbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view2) {
+                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.show_graph_dialog, null);
+
+                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
+                alertBuilder.setView(view);
+                alertBuilder.setCancelable(true)
+                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                make_toast("Show graph");
+                            }
+                        });
+                final Dialog dialog = alertBuilder.create();
+                dialog.show();
+                dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
+                        Resources.getSystem().getDisplayMetrics().heightPixels / 2);
+            }
+        });
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
@@ -454,8 +480,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             make_toast("settings clicked");
+        if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
+                    show_give_permission_dialog();
+                }
             //if (myDb.importDatabase(getPackageName(), MainActivity.this) == false) show_give_permission_dialog();
-            do_first_use_of_app_stuff();
+            //do_first_use_of_app_stuff();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -484,21 +513,38 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 
     public void update_personal_best_textview(){
-        String special_throws_to_insert = "";
-        String special_throw_sequences_to_insert = "";
-        if (special_throw_textview.getText().toString().contains("/")){
-            special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
-            special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
+        String pattern = "";
+        String number = "";
+        if (pattern_textview.getText().toString().contains(" / objs:")){
+            pattern = pattern_textview.getText().toString().split(" / objs:")[0];
+            number = pattern_textview.getText().toString().split(" / objs:")[1];
         }
-        String catch_pb = myDb.getPersonalBestFromSpecifics(pattern_textview.getText().toString().split(" / objs:")[0],"catch",
-                pattern_textview.getText().toString().split(" / objs:")[1],prop_textview.getText().toString(),
-                modifier_textview.getText().toString(),special_throws_to_insert, special_throw_sequences_to_insert);
+        String modifiers = modifier_textview.getText().toString();
+        if (modifiers.isEmpty()){modifiers="";}
+        String special_throws = "";
+        String special_throw_sequences = "";
+        if (special_throw_textview.getText().toString().contains("/")){
+            try {
+                special_throws = special_throw_textview.getText().toString().split("/")[0];
+                special_throw_sequences = special_throw_textview.getText().toString().split("/")[1];
+            }catch (Exception e) {e.printStackTrace(); }
+        }
+        String catch_pb = myDb.getPersonalBestFromSpecifics(pattern,"catch",number,
+                prop_textview.getText().toString(),modifiers,special_throws, special_throw_sequences);
 
-        String drop_pb = myDb.getPersonalBestFromSpecifics(pattern_textview.getText().toString().split(" / objs:")[0],"drop",
-                pattern_textview.getText().toString().split(" / objs:")[1],prop_textview.getText().toString(),
-                modifier_textview.getText().toString(),special_throws_to_insert, special_throw_sequences_to_insert);
+        String drop_pb = myDb.getPersonalBestFromSpecifics(pattern,"drop",number,
+                prop_textview.getText().toString(), modifiers,special_throws, special_throw_sequences);
+
+//        String mycatch_pb = myDb.getPersonalBestFromSpecifics("441","catch",
+//                "3","Balls",
+//                "","", "");
+//
+//        String mydrop_pb = myDb.getPersonalBestFromSpecifics(pattern_textview.getText().toString().split(" / objs:")[0],"drop",
+//                pattern_textview.getText().toString().split(" / objs:")[1],prop_textview.getText().toString(),
+//                modifiers,special_throws, special_throw_sequences);
 
         personal_best_textview.setText("Personal Best - Catch: "+catch_pb+"  Drop: "+drop_pb);
+        //personal_best_textview.setText(myDb.getAllFromColumn("NAME").toString());
     }
 
 
@@ -525,6 +571,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
         }
     }
+
+    public void import_db(){
+        if (myDb.importDatabase(getPackageName(), MainActivity.this) == false){
+            show_give_permission_dialog();
+        }
+    }
+
     public void remove_siteswaps_of_other_numbers(int objectNumber){
         Log.d("TAG", "list_of_patterns.size"+list_of_patterns.size());
         list_of_patterns = myTfh.fillListFromTextFile(get_file_input_stream("patternlist"));
@@ -713,8 +766,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         String special_throws_to_insert = "";
         String special_throw_sequences_to_insert = "";
         if (special_throw_textview.getText().toString().contains("/")){
-            special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
-            special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
+            try {
+                special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
+                special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
+            }catch (Exception e) {e.printStackTrace(); }
         }
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedDate = df.format(c.getTime());
