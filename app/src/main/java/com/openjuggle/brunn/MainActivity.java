@@ -25,6 +25,7 @@ import android.media.AudioManager;
 import android.os.Bundle;
 import android.content.Intent;
 import android.os.Handler;
+import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -48,6 +49,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.jjoe64.graphview.GraphView;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
@@ -59,6 +61,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     AutoCompleteTextView choose_pattern_dialog_actv;
     List<String> list_of_list_names = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
     LineGraphSeries<DataPoint> graphseries;
+    private GraphView graph;
+    public Boolean graph_is_visible = false;
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
@@ -91,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         myTfh = new TextFileHelper(this);//creates an object from our database class over in DatabaseHelper
         myFh = new FormatHelper();
         //fillMaps();
@@ -102,6 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         try {
             prop_textview.setText(myDb.getAllFromColumn("PROP").get(myDb.getAllFromColumn("PROP").size()-1));
         } catch (Exception e) {e.printStackTrace(); }
+
         prop_textview.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -140,6 +146,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         personal_best_textview = findViewById(R.id.personalbesttextview);
 
         set_current_volume();
+        graph = findViewById(R.id.historygraph);
         timertext = findViewById(R.id.timertext);
         fill_lists_from_text_files();
 
@@ -399,21 +406,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         showgraphbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view2) {
-                View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.show_graph_dialog, null);
-
-                AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this,android.R.style.Theme_Material_Light_Dialog_NoActionBar);
-                alertBuilder.setView(view);
-                alertBuilder.setCancelable(true)
-                        .setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                make_toast("Show graph");
-                            }
-                        });
-                final Dialog dialog = alertBuilder.create();
-                dialog.show();
-                dialog.getWindow().setLayout(Resources.getSystem().getDisplayMetrics().widthPixels,
-                        Resources.getSystem().getDisplayMetrics().heightPixels / 2);
+                if (graph_is_visible) {
+                    graph.setVisibility(View.GONE);
+                    graph_is_visible = false;
+                }else{
+                    graph.setVisibility(View.VISIBLE);
+                    graph_is_visible = true;
+                }
             }
         });
         final Button startbutton = findViewById(R.id.startbutton);
@@ -508,8 +507,24 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         //    add_completed_runs_to_db();
         //}
         update_personal_best_textview();
+        update_graph();
     }
 
+    public void update_graph(){
+
+        double x,y;
+        x = 0;
+        y=0;
+        graphseries = new LineGraphSeries<DataPoint>();
+        for (int i=0;i<500;i++ ){
+            x=x+.1;
+            y++;
+            //instead of appending these xs and ys, i should append each duration from the current specifics, get the same way as i do with the records
+            graphseries.appendData(new DataPoint(x,y), true, 500);
+
+        }
+        graph.addSeries(graphseries);
+    }
 
 
     public void update_personal_best_textview(){

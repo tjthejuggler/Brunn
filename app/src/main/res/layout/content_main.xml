@@ -37,7 +37,7 @@
         android:layout_marginTop="8dp"
         android:text="START"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/specialthrowbutton" />
+        app:layout_constraintTop_toBottomOf="@+id/historygraph" />
 
     <Button
         android:id="@+id/catchbutton"
@@ -121,6 +121,14 @@
         app:layout_constraintStart_toEndOf="@+id/specialthrowbutton"
         app:layout_constraintTop_toTopOf="@+id/specialthrowbutton" />
 
+    <com.jjoe64.graphview.GraphView
+        android:id="@+id/historygraph"
+        android:layout_width="0dp"
+        android:layout_height="517dp"
+        android:paddingTop="50dp"
+        android:visibility="visible"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/specialthrowbutton" />
     <Button
         android:id="@+id/propbutton"
         android:layout_width="64dp"
