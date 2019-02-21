@@ -72,9 +72,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public int run_duration;
     public int start_time_of_last_run = 0;
     private TextView prop_textview;
+    String specifics_prop = "";
     private TextView pattern_textview;
+    String specifics_pattern = "";
+    String specifics_number = "";
     private TextView modifier_textview;
+    String specifics_modifiers = "";
     private TextView special_throw_textview;
+    String specifics_special_throws = "";
+    String specifics_special_throws_sequences = "";
     private TextView personal_best_textview;
     List<String> list_of_props = new LinkedList<>();
     List<Integer> list_of_numbers = new LinkedList<>();
@@ -107,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         on_create_db();
         try {
             prop_textview.setText(myDb.getAllFromColumn("PROP").get(myDb.getAllFromColumn("PROP").size()-1));
+            specifics_prop = prop_textview.getText().toString();
         } catch (Exception e) {e.printStackTrace(); }
 
         prop_textview.setOnTouchListener(new View.OnTouchListener() {
@@ -127,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             prop_text_viewCycleIndex = 0;
                         }
                         prop_textview.setText(list_of_props.get(prop_text_viewCycleIndex));
+                        specifics_prop = list_of_props.get(prop_text_viewCycleIndex);
                     }
                     if (deltaX < -MIN_DISTANCE){
                         prop_text_viewCycleIndex--;
@@ -134,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             prop_text_viewCycleIndex = list_of_props.size()-1;
                         }
                         prop_textview.setText(list_of_props.get(prop_text_viewCycleIndex));
+                        specifics_prop = list_of_props.get(prop_text_viewCycleIndex);
                     }
                     specifics_changed();
                 }
@@ -191,6 +200,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choosepropdialogactv.getText().toString();
                                 prop_textview.setText(userInput);
+                                specifics_prop = userInput;
                                 specifics_changed();
                                 if (!list_of_props.contains(userInput)){
                                     myTfh.appendTextFile(get_file_output_append_stream("proplist"),userInput);
@@ -270,6 +280,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choose_pattern_dialog_actv.getText().toString();
                                 pattern_textview.setText(userInput + " / objs:"+choose_number_spinner.getSelectedItem().toString());
+                                specifics_pattern = userInput;
+                                specifics_number = choose_number_spinner.getSelectedItem().toString();
                                 specifics_changed();
                                 if (!list_of_patterns.contains(userInput)){
                                     myTfh.appendTextFile(get_file_output_append_stream("patternlist"),userInput);
@@ -324,6 +336,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choosemodifierdialogactv.getText().toString();
                                 modifier_textview.setText(userInput);
+                                specifics_modifiers = userInput;
                                 specifics_changed();
                                 if (!list_of_modifiers.contains(userInput)){
                                     myTfh.appendTextFile(get_file_output_append_stream("modifierlist"),userInput);
@@ -394,6 +407,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                     list_of_special_throw_sequences.add(userInput);
                                 }
                                 special_throw_textview.setText(userInput+"/"+specialThrowSequenceUserInput);
+                                specifics_special_throws = userInput;
+                                specifics_special_throws_sequences = specialThrowSequenceUserInput;
                                 specifics_changed();
                             }
                         });
@@ -512,33 +527,16 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     }
 
     //todo
-    //every time a specifics textview changes, make a global variable with that kind of specific get updated so we can get rid of the clutter
-    // that is in update_graph and personalrecord and anywhere we insert to db.
+    //on graph, instead of showing seconds, show minutes
     //-instead of graph button, make a radiobutton toggle that either shows a history list, graph, or the start button. Only do the logic of the
     //      thing the toggle is set on so we arent loading stuff in the background needlessly
-    //-get rid of the bug that erquires us to go into special throws and hit ok even if it is blank (in order to fill in graph/querrry db)
     public void update_graph(){
-        String pattern = "";
-        String number = "";
-        if (pattern_textview.getText().toString().contains(" / objs:")){
-            pattern = pattern_textview.getText().toString().split(" / objs:")[0];
-            number = pattern_textview.getText().toString().split(" / objs:")[1];
-        }
-        String modifiers = modifier_textview.getText().toString();
-        if (modifiers.isEmpty()){modifiers="";}
-        String special_throws = "";
-        String special_throw_sequences = "";
-        if (special_throw_textview.getText().toString().contains("/")){
-            try {
-                special_throws = special_throw_textview.getText().toString().split("/")[0];
-                special_throw_sequences = special_throw_textview.getText().toString().split("/")[1];
-            }catch (Exception e) {e.printStackTrace(); }
-        }
-
         int longest_runs_seconds = 0;
 
-        ArrayList<String> list_of_durations = myDb.getDurationsFromSpecifics(pattern,number,
-                prop_textview.getText().toString(),modifiers,special_throws, special_throw_sequences);
+        make_toast("spprop :"+specifics_prop);
+        make_toast("txt :"+prop_textview.getText().toString());
+        ArrayList<String> list_of_durations = myDb.getDurationsFromSpecifics(specifics_pattern,specifics_number,
+                specifics_prop,specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
 
         graphseriescatch = new LineGraphSeries<DataPoint>();
         ArrayList<Integer> list_of_duration_ints = new ArrayList<>();
@@ -563,38 +561,13 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 
     public void update_personal_best_textview(){
-        String pattern = "";
-        String number = "";
-        if (pattern_textview.getText().toString().contains(" / objs:")){
-            pattern = pattern_textview.getText().toString().split(" / objs:")[0];
-            number = pattern_textview.getText().toString().split(" / objs:")[1];
-        }
-        String modifiers = modifier_textview.getText().toString();
-        if (modifiers.isEmpty()){modifiers="";}
-        String special_throws = "";
-        String special_throw_sequences = "";
-        if (special_throw_textview.getText().toString().contains("/")){
-            try {
-                special_throws = special_throw_textview.getText().toString().split("/")[0];
-                special_throw_sequences = special_throw_textview.getText().toString().split("/")[1];
-            }catch (Exception e) {e.printStackTrace(); }
-        }
-        String catch_pb = myDb.getPersonalBestFromSpecifics(pattern,"catch",number,
-                prop_textview.getText().toString(),modifiers,special_throws, special_throw_sequences);
+        String catch_pb = myDb.getPersonalBestFromSpecifics(specifics_pattern,"catch",specifics_number,
+                specifics_prop,specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
 
-        String drop_pb = myDb.getPersonalBestFromSpecifics(pattern,"drop",number,
-                prop_textview.getText().toString(), modifiers,special_throws, special_throw_sequences);
-
-//        String mycatch_pb = myDb.getPersonalBestFromSpecifics("441","catch",
-//                "3","Balls",
-//                "","", "");
-//
-//        String mydrop_pb = myDb.getPersonalBestFromSpecifics(pattern_textview.getText().toString().split(" / objs:")[0],"drop",
-//                pattern_textview.getText().toString().split(" / objs:")[1],prop_textview.getText().toString(),
-//                modifiers,special_throws, special_throw_sequences);
+        String drop_pb = myDb.getPersonalBestFromSpecifics(specifics_pattern,"drop",specifics_number,
+                specifics_prop, specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
 
         personal_best_textview.setText("Personal Best - Catch: "+catch_pb+"  Drop: "+drop_pb);
-        //personal_best_textview.setText(myDb.getAllFromColumn("NAME").toString());
     }
 
 
@@ -813,19 +786,19 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void add_completed_run_to_db(String endtype){
         Calendar c = Calendar.getInstance();
         System.out.println("Current time => "+c.getTime());
-        String special_throws_to_insert = "";
-        String special_throw_sequences_to_insert = "";
-        if (special_throw_textview.getText().toString().contains("/")){
-            try {
-                special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
-                special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
-            }catch (Exception e) {e.printStackTrace(); }
-        }
+        //String special_throws_to_insert = "";
+        //String special_throw_sequences_to_insert = "";
+//        if (special_throw_textview.getText().toString().contains("/")){
+//            try {
+//                special_throws_to_insert = special_throw_textview.getText().toString().split("/")[0];
+//                special_throw_sequences_to_insert = special_throw_textview.getText().toString().split("/")[1];
+//            }catch (Exception e) {e.printStackTrace(); }
+//        }
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedDate = df.format(c.getTime());
-        myDb.insertRun ( formattedDate, pattern_textview.getText().toString().split(" / objs:")[0], String.valueOf(run_duration),endtype,
-                pattern_textview.getText().toString().split(" / objs:")[1], prop_textview.getText().toString(),
-                modifier_textview.getText().toString(), special_throws_to_insert , special_throw_sequences_to_insert);
+        myDb.insertRun ( formattedDate, specifics_pattern, String.valueOf(run_duration),endtype,
+                specifics_number, specifics_prop,
+                specifics_modifiers, specifics_special_throws , specifics_special_throws_sequences);
     }
     public void start_timer() {
         timer = new Timer();
