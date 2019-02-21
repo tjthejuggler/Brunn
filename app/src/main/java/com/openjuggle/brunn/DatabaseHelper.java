@@ -110,6 +110,26 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return array_list;
     }
 
+    public ArrayList<String> getDurationsFromSpecifics(String specific_name, String specific_number, String specific_prop,
+                                                       String specific_modifier, String specific_special_throws, String specific_throw_sequences) {
+
+        ArrayList<String> array_list = new ArrayList<String>();
+
+        SQLiteDatabase db = this.getReadableDatabase();
+
+
+        Cursor res =  db.rawQuery( "select * from HISTORY WHERE (NAME = '"+specific_name+"'  AND NUMBER = '"+specific_number+
+                "' AND PROP = '"+specific_prop+"' AND MODIFIERS = '"+specific_modifier+
+                "' AND SPECIALTHROWS = '"+specific_special_throws+"' AND SPECIALTHROWSEQUENCES = '"+specific_throw_sequences+"')", null );
+        res.moveToFirst();
+
+        while(res.isAfterLast() == false){
+            array_list.add(res.getString(res.getColumnIndex("DURATION")));
+            res.moveToNext();
+        }
+        return array_list;
+    }
+
     public String getPersonalBestFromSpecifics(String specific_name, String specific_endtype, String specific_number, String specific_prop,
                                                           String specific_modifier, String specific_special_throws, String specific_throw_sequences) {
 

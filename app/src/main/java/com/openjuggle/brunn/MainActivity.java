@@ -60,7 +60,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     String dbName = "brunn.db";
     AutoCompleteTextView choose_pattern_dialog_actv;
     List<String> list_of_list_names = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
-    LineGraphSeries<DataPoint> graphseries;
+    LineGraphSeries<DataPoint> graphseriescatch;
+    LineGraphSeries<DataPoint> graphseriesdrop;
     private GraphView graph;
     public Boolean graph_is_visible = false;
     private Timer timer;
@@ -510,20 +511,54 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         update_graph();
     }
 
+    //todo
+    //every time a specifics textview changes, make a global variable with that kind of specific get updated so we can get rid of the clutter
+    // that is in update_graph and personalrecord and anywhere we insert to db.
+    //-instead of graph button, make a radiobutton toggle that either shows a history list, graph, or the start button. Only do the logic of the
+    //      thing the toggle is set on so we arent loading stuff in the background needlessly
+    //-get rid of the bug that erquires us to go into special throws and hit ok even if it is blank (in order to fill in graph/querrry db)
     public void update_graph(){
-
-        double x,y;
-        x = 0;
-        y=0;
-        graphseries = new LineGraphSeries<DataPoint>();
-        for (int i=0;i<500;i++ ){
-            x=x+.1;
-            y++;
-            //instead of appending these xs and ys, i should append each duration from the current specifics, get the same way as i do with the records
-            graphseries.appendData(new DataPoint(x,y), true, 500);
-
+        String pattern = "";
+        String number = "";
+        if (pattern_textview.getText().toString().contains(" / objs:")){
+            pattern = pattern_textview.getText().toString().split(" / objs:")[0];
+            number = pattern_textview.getText().toString().split(" / objs:")[1];
         }
-        graph.addSeries(graphseries);
+        String modifiers = modifier_textview.getText().toString();
+        if (modifiers.isEmpty()){modifiers="";}
+        String special_throws = "";
+        String special_throw_sequences = "";
+        if (special_throw_textview.getText().toString().contains("/")){
+            try {
+                special_throws = special_throw_textview.getText().toString().split("/")[0];
+                special_throw_sequences = special_throw_textview.getText().toString().split("/")[1];
+            }catch (Exception e) {e.printStackTrace(); }
+        }
+
+        int longest_runs_seconds = 0;
+
+        ArrayList<String> list_of_durations = myDb.getDurationsFromSpecifics(pattern,number,
+                prop_textview.getText().toString(),modifiers,special_throws, special_throw_sequences);
+
+        graphseriescatch = new LineGraphSeries<DataPoint>();
+        ArrayList<Integer> list_of_duration_ints = new ArrayList<>();
+        for (int i=0;i<list_of_durations.size();i++) {
+            list_of_duration_ints.add(Integer.parseInt(list_of_durations.get(i)));
+            if (list_of_duration_ints.get(i)>longest_runs_seconds){
+                longest_runs_seconds = list_of_duration_ints.get(i);
+            }
+        }
+        graph.getViewport().setYAxisBoundsManual(true);
+        graph.getViewport().setMaxY(longest_runs_seconds);
+        graph.getViewport().setXAxisBoundsManual(true);
+        graph.getViewport().setMaxX(list_of_durations.size());
+        for (int i=0;i<list_of_durations.size();i++){
+
+            graphseriescatch.appendData(new DataPoint(i,Integer.parseInt(list_of_durations.get(i))), false, list_of_durations.size());
+        }
+
+        graph.addSeries(graphseriescatch);
+
     }
 
 
