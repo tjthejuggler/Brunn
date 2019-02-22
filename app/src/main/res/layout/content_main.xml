@@ -27,7 +27,7 @@
         android:layout_height="264dp"
         android:layout_marginLeft="16dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/personalbesttextview" />
+        app:layout_constraintTop_toBottomOf="@+id/historygraph" />
 
     <Button
         android:id="@+id/startbutton"
@@ -123,14 +123,13 @@
 
     <com.jjoe64.graphview.GraphView
         android:id="@+id/historygraph"
-        android:layout_marginTop="20dp"
-        android:layout_marginRight="20dp"
         android:layout_width="0dp"
         android:layout_height="517dp"
+        android:layout_marginTop="20dp"
         android:paddingTop="50dp"
-        android:visibility="visible"
+        android:visibility="gone"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/specialthrowbutton" />
+        app:layout_constraintTop_toBottomOf="@+id/personalbesttextview" />
     <Button
         android:id="@+id/propbutton"
         android:layout_width="64dp"
@@ -161,17 +160,39 @@
         android:layout_marginLeft="8dp"
         android:text="Personal Best:"
         app:layout_constraintStart_toStartOf="@+id/dropbutton"
-        app:layout_constraintTop_toBottomOf="@+id/dropbutton" />
+        app:layout_constraintTop_toBottomOf="@+id/specialthrowbutton" />
 
-    <Button
-        android:id="@+id/show_graph_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="119dp"
+        android:layout_height="125dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginRight="8dp"
-        android:text="Graph"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/proptextview" />
+        app:layout_constraintTop_toTopOf="@+id/proptextview">
+
+        <RadioButton
+            android:id="@+id/run_radioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:checked="true"
+            android:text="Run" />
+
+        <RadioButton
+            android:id="@+id/graph_radioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Graph" />
+
+        <RadioButton
+            android:id="@+id/history_radioButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="History" />
+    </RadioGroup>
 
 </android.support.constraint.ConstraintLayout>

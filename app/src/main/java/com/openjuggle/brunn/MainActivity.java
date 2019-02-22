@@ -45,6 +45,8 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.widget.MultiAutoCompleteTextView;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -63,7 +65,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     LineGraphSeries<DataPoint> graphseriescatch;
     LineGraphSeries<DataPoint> graphseriesdrop;
     private GraphView graph;
-    public Boolean graph_is_visible = false;
+    public Boolean run_is_selected = true;
+    public Boolean graph_is_selected = false;
+    public Boolean history_is_selected = false;
     private Timer timer;
     private TextView timertext;
     public Boolean inRun = false;
@@ -173,6 +177,26 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
                 //do_first_use_of_app_stuff();
                 //myTfh.appendTextFile(get_file_output_append_stream("patternlist"),"mytest2");
+            }
+        });
+        RadioGroup radioGroup = findViewById(R.id.radioGroup);
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, int checkedId) {
+                RadioButton rb=(RadioButton)findViewById(checkedId);
+                run_is_selected = graph_is_selected = history_is_selected = false;
+
+                if (rb.getText().toString().equals("Run")){
+                    graph.setVisibility(View.GONE);
+                    run_is_selected = true;
+                }else if(rb.getText().toString().equals("Graph")){
+                    graph.setVisibility(View.VISIBLE);
+                    graph_is_selected = true;
+                }else if(rb.getText().toString().equals("History")){
+                    history_is_selected = true;
+                    graph.setVisibility(View.GONE);
+
+                }
             }
         });
         final Button propbutton = findViewById(R.id.propbutton);
@@ -418,19 +442,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         Resources.getSystem().getDisplayMetrics().heightPixels / 2);
             }
         });
-        final Button showgraphbutton = findViewById(R.id.show_graph_button);
-        showgraphbutton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view2) {
-                if (graph_is_visible) {
-                    graph.setVisibility(View.GONE);
-                    graph_is_visible = false;
-                }else{
-                    graph.setVisibility(View.VISIBLE);
-                    graph_is_visible = true;
-                }
-            }
-        });
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
@@ -446,12 +457,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view) {
                 if (!inRun) {
                     Boolean can_begin_run = true;
-                    if(prop_textview.getText().toString().equals("")) {
+                    if(specifics_prop.equals("")) {
                         can_begin_run = false;
                         make_toast("select prop");
                     }
                     if (can_begin_run) {
-                        if (!pattern_textview.getText().toString().contains(" / objs:")) {
+                        if (specifics_pattern.equals("")) {
                             can_begin_run = false;
                             make_toast("select pattern");
                         }
