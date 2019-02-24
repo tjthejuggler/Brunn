@@ -899,6 +899,10 @@ Graph should update when radiobitton selects it. Same with full history. It shou
     -go through formic ai coach thoughts
     -a possible way to use the FAB would be for ai coach to be customizable with a fab longhold, a with a normal tap it just fills in new specifics
 
+FORMIC NOTES:
+    *GET FROM OTHER COMPUTER*
+    * Unrelated, just testing github on new computer, this is from the ususal one
+
 ------MOST IMPORTANT REQUIREMENTS-------------
         As few app pages as possible
         Main Screen
