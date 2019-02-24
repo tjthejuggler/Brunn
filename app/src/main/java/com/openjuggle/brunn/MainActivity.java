@@ -537,15 +537,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         update_graph();
     }
 
-    //todo
-    //on graph, instead of showing seconds, show minutes
-    //-instead of graph button, make a radiobutton toggle that either shows a history list, graph, or the start button. Only do the logic of the
-    //      thing the toggle is set on so we arent loading stuff in the background needlessly
     public void update_graph(){
-        int longest_runs_seconds = 0;
+        double longest_runs_seconds = 0;
 
-        make_toast("spprop :"+specifics_prop);
-        make_toast("txt :"+prop_textview.getText().toString());
+        //make_toast("spprop :"+specifics_prop);
+        //make_toast("txt :"+prop_textview.getText().toString());
         ArrayList<String> list_of_durations = myDb.getDurationsFromSpecifics(specifics_pattern,specifics_number,
                 specifics_prop,specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
 
@@ -558,12 +554,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             }
         }
         graph.getViewport().setYAxisBoundsManual(true);
-        graph.getViewport().setMaxY(longest_runs_seconds);
+        graph.getViewport().setMaxY(longest_runs_seconds/60);
         graph.getViewport().setXAxisBoundsManual(true);
         graph.getViewport().setMaxX(list_of_durations.size());
         for (int i=0;i<list_of_durations.size();i++){
 
-            graphseriescatch.appendData(new DataPoint(i,Integer.parseInt(list_of_durations.get(i))), false, list_of_durations.size());
+            graphseriescatch.appendData(new DataPoint(i,Integer.parseInt(list_of_durations.get(i))/60.0000), false, list_of_durations.size());
         }
 
         graph.addSeries(graphseriescatch);
@@ -578,7 +574,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         String drop_pb = myDb.getPersonalBestFromSpecifics(specifics_pattern,"drop",specifics_number,
                 specifics_prop, specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
 
-        personal_best_textview.setText("Personal Best - Catch: "+catch_pb+"  Drop: "+drop_pb);
+        personal_best_textview.setText("Personal Best - Catch: "+myFh.formatSeconds(Integer.parseInt(catch_pb))+"  Drop: "+myFh.formatSeconds(Integer.parseInt(drop_pb)));
     }
 
 
@@ -838,23 +834,31 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 }
 /*
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
+TODO THESE NEED SORTED INTO CATEGORIES BELOW
+Make fade touch bar for amount of time after drop or catch
+
+Make history available as a graph
+
+Need a cancel button for during runs
+
+Even with no camera it could predict my drops with some accuracy just from my previous run info
+
+Make specifics be in the popups what is currently selected in main specifics area
+
+Create a kotlin file in brunn just to learn how
+
+Personal best should be shown no matter what, so above the graph and above start button
+
+Make radio button that shifts between start button, graph, total history. There should be a current history below the start button that gets reset when specifics change(maybe when session ends..)
+
+Personal best should be shown in min:sec
+
+Graph should be shown in minutes
+
+Graph should update when radiobitton selects it. Same with full history. It should also update when specifics change and graph is already selected. The same is true with full history.
+
 -NEXT:
-    do the stuff in specifics_changed()
-    make make a formatHelper class
     make the settings activity
--TO MAKE DB:
-    -every time the specifics change:
-        -if there were completed runs with the previous specifics, we upload them to the db, to do this:
-            -check if there are completed runs that have not been uploaded to the db yet, if there are..
-                -make a new row for each run and fill in the info of the runs
-        -once completed runs of the previous specifics have been uploaded:
-            -check the db for all runs which match the newly set specifics, get the personal bests for it and put them in a textview
-        -then we just start doing runs until we switch specifics and start the process over
--We should upload completed runs to DB if:
-    -the app is being closed
-    -specifics change
-    -enough time has elapsed without a run
-    -maybe make an 'upload runs to db' button
 -beyond basics DB stuff we want:
     -make easy way to input records in the past
 -possible mail button uses
@@ -865,6 +869,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 -once db is installed:
 
 -settings:
+    -set the sounds for reaching personal bests, eventually sounds that play for customly defined times as well,
+        like a goal time, or twice current personalbest(this could also just be in goal time if we use 'pbc' to mean personal best catch and do pbc*2
     -make another screen show when settings is clicked
     -buffer time
     -make sounds? set sounds?
@@ -883,7 +889,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     -maybe make an 'upload runs to db' button
 -Things I don't understand
     -static
-
+-AI coach thoughts:
+    -look into different kinds of Machine learning algorithms
+    -we can get numbers by doing things like 'number of seconds since a run', 'number of seconds since a run with these specifics',
+        'time since a personal best was broken'
+    -even something simple without machine learning may be useful just to utilize a randomizer (look into interleaving)
+        https://cnewmanblog.wordpress.com/2014/08/17/interleaving-and-variation/
+        look into: shea and morgan experiment
+    -go through formic ai coach thoughts
+    -a possible way to use the FAB would be for ai coach to be customizable with a fab longhold, a with a normal tap it just fills in new specifics
 
 ------MOST IMPORTANT REQUIREMENTS-------------
         As few app pages as possible

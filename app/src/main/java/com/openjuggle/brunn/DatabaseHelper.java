@@ -134,8 +134,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                                                           String specific_modifier, String specific_special_throws, String specific_throw_sequences) {
 
 
-        SQLiteDatabase db = this.getReadableDatabase(); //todo make below commented fit format of above commented
-        //Cursor res =  db.rawQuery( "select * from HISTORY WHERE (NAME = '"+specific_name+"' AND ENDTYPE = 'catch')", null );
+        SQLiteDatabase db = this.getReadableDatabase();
 
         Cursor res =  db.rawQuery( "select * from HISTORY WHERE (NAME = '"+specific_name+"' AND ENDTYPE = '"+specific_endtype+
                 "' AND NUMBER = '"+specific_number+"' AND PROP = '"+specific_prop+"' AND MODIFIERS = '"+specific_modifier+
