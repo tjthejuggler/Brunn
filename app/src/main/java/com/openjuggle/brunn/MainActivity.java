@@ -902,6 +902,7 @@ Graph should update when radiobitton selects it. Same with full history. It shou
 FORMIC NOTES:
     *GET FROM OTHER COMPUTER*
     * Unrelated, just testing github on new computer, this is from the ususal one
+    * this push is from the new computer
 
 ------MOST IMPORTANT REQUIREMENTS-------------
         As few app pages as possible
