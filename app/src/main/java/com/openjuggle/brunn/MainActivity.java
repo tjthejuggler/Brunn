@@ -834,31 +834,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 }
 /*
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
-TODO THESE NEED SORTED INTO CATEGORIES BELOW
-Make fade touch bar for amount of time after drop or catch
 
-Make history available as a graph
-
-Need a cancel button for during runs
-
-Even with no camera it could predict my drops with some accuracy just from my previous run info
-
-Make specifics be in the popups what is currently selected in main specifics area
-
-Create a kotlin file in brunn just to learn how
-
-Personal best should be shown no matter what, so above the graph and above start button
-
-Make radio button that shifts between start button, graph, total history. There should be a current history below the start button that gets reset when specifics change(maybe when session ends..)
-
-Personal best should be shown in min:sec
-
-Graph should be shown in minutes
-
-Graph should update when radiobitton selects it. Same with full history. It should also update when specifics change and graph is already selected. The same is true with full history.
-
+Button stuff:
+    -Make fade touch bar for amount of time after drop or catch
+    -Buttons involved in runs should show/hide, not get pushed down
+    -Need a cancel button for during runs
+Misc:
+    -Make specifics be in the popups what is currently selected in main specifics area
+    -Create a kotlin file in brunn just to learn how
+    -radiobutton should update the full history list or the graph(whichever is selected)
+    -short history should be shown with the button for the runs
+    -short history should get reset when specifics change
+Thoughts:
+-Even with no camera it could predict my drops with some accuracy just from my previous run info
 -NEXT:
-    make the settings activity
+    make the settings activity(look at the settings section below for content inspiration)
 -beyond basics DB stuff we want:
     -make easy way to input records in the past
 -possible mail button uses
@@ -898,6 +888,65 @@ Graph should update when radiobitton selects it. Same with full history. It shou
         look into: shea and morgan experiment
     -go through formic ai coach thoughts
     -a possible way to use the FAB would be for ai coach to be customizable with a fab longhold, a with a normal tap it just fills in new specifics
+-AI coach thoughts (needs sorted)
+      -Ai coach creates a session based on a certain amount of time and guesses as to how long endurances/drills will take
+      -By showing ai assistant,coach,university (where new coaches can be selected and essentiallyy created),
+          maybe we can keep ppl motivated to use the app more. I think some sort of partially showing them
+            what is eventually available is good, maybe use a dialog to hide stuff, but some is revealed
+    //AI assistant:-------------------------------------------------------
+    //  -it is not quite a coach, but it could help pick modifier/pattern combos that have not been done in awhile and thus
+    //      are likely to be able to have a new personal best set.
+    //  -it could randomly pick a modifier/pattern combo
+    //      -in order to avoid picking multiple special throw sequence modifiers that are the same, we should probably use the
+    //          '-' symbol to prevent it from doing so
+    //      -maybe this means that stuff like 'listen' should also use a '-' so that we could use things like listen-silence, listen-music...
+    //  -i don't know if we would need it or not if we just use the '-' system, but maybe we would want a way to say never use certain
+    //      modifiers to be used together.
+
+        //EVENTUAL 'AI COACH' STUFF
+    //       -(patterns/Modifiers could have some sort of priority ratings so that certain things could
+    //               be focused on, and other patterns/Modifiers could be put on hold for now, but not deleted
+    //               from the DB list
+    //       -maybe some sort of 'trick difficulty' could be determined by the length of the drills/records for that trick
+    //                  not sure if this would be useful or not
+    //  -there could be a 'ai decides pattern/Modifiers' button
+    //          -even if the ai isn't too smart, just having a random pattern chosen might be nice
+    //          -it could have a few response buttons as well, such as:
+    //                  -never recommend this exact pattern/Modifiers combo again
+    //                  -never recommend this Modifiers combo again
+    //                  -give me a new recommendation for now(this option may be redundant to just clicking
+    //                          the original 'ai recommend' button
+    //                  -Formic could tell the user to stop to take the responsibilty
+    //                               away from the user. one less thing to worry about.
+    //  -the ai could sometimes tell the user what their personal best is for a pattern, and sometimes not, and sometimes
+    //              it could lie about what their personal best is. The user could know that it sometimes lies.
+        //  -AI COACH THOUGHTS:-------------------------------------------------------
+    //  -There could be something set up so that the user must do a certain number of runs before they unlock AI assistant
+    //      or AI Coach
+    //  -There could be an ai coach tab where you create ai coaches. Each table holding the historys should hold the ai
+    //      brains as well so that when historys get uploaded and shared, the coach responsible can also be shared.
+    //  -There should be a coach that is just 'Pick a random similar pattern', and one that is the same but increasing
+    //      or decreasing in difficulty (so we need a difficulty rating).
+    //  -Coaches should have a list of patterns they have access to.
+    //  -A version without ai coach should be packaged together and offered around online. Maybe it should have an 'Ai
+    //      coach comming soon' message on another tab.
+    //  -Only 1 coach at a time or multiple?
+    //      -i think only 1 because we want to be able to more clearly see the affect of a coach over time.
+    //IDEAS ON HOW TO INTRODUCE AI:------------------------------------------------
+    //  -after the user has used the basic app for a certain amount of time/usage, they unlock access to the ai assistant
+    //  -after a certain amount of time/usage with that, they unlock access to a pre-defined AI coach
+    //      -by using a pre-defined, they can try one that I think is decent, and I can get results from the AI coaches performance.
+    //         Whenever I want to, I can switch this AI coach out with other AI coaches to test different things out.
+    //  -after a certain amount of time with a pre-defined AI coach, the user becomes able to:(here are some different possible ideas)
+    //      -choose from a selection of AI coaches
+    //      -define a simple AI coach with slide bars
+    //      -define a complex AI coach with slide bars
+    //  -the results of different AI coaches should be able to be viewed by anyone
+    //  -AI coaches made by users could be put up with their track record, and able to be selected by other users
+    //      -maybe a sort of currency could even be created so that by using coaches for a certain amount of time, you can the ability
+    //          to create/use other coaches
+    
+
 
 FORMIC NOTES:
     *GET FROM OTHER COMPUTER*
