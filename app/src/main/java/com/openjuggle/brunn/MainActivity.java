@@ -833,6 +833,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 }
 /*
+making sure i can push from this comp
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
 TODO THESE NEED SORTED INTO CATEGORIES BELOW
 Make fade touch bar for amount of time after drop or catch
