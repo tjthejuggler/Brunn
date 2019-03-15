@@ -903,6 +903,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
 }
 /*
+making sure i can push from this comp
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
 Next:
     make modifier and special throw be filled automatically based on whats selected just like prop and pattern is
