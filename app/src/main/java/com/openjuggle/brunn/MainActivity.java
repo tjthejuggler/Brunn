@@ -184,18 +184,23 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             @Override
             public void onCheckedChanged(RadioGroup group, int checkedId) {
                 RadioButton rb=(RadioButton)findViewById(checkedId);
-                run_is_selected = graph_is_selected = history_is_selected = false;
+                if (!inRun) {
+                    run_is_selected = graph_is_selected = history_is_selected = false;
 
-                if (rb.getText().toString().equals("Run")){
-                    graph.setVisibility(View.GONE);
-                    run_is_selected = true;
-                }else if(rb.getText().toString().equals("Graph")){
-                    graph.setVisibility(View.VISIBLE);
-                    graph_is_selected = true;
-                }else if(rb.getText().toString().equals("History")){
-                    history_is_selected = true;
-                    graph.setVisibility(View.GONE);
-
+                    if (rb.getText().toString().equals("Run")) {
+                        set_widgets_visibility("run");
+                        run_is_selected = true;
+                    } else if (rb.getText().toString().equals("Graph")) {
+                        set_widgets_visibility("graph");
+                        graph_is_selected = true;
+                    } else if (rb.getText().toString().equals("History")) {
+                        set_widgets_visibility("history");
+                        history_is_selected = true;
+                    }
+                }else{
+                    RadioButton b = (RadioButton) findViewById(R.id.run_radioButton);
+                    b.setChecked(true);
+                    make_toast("In a run");
                 }
             }
         });
@@ -205,6 +210,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view2) {
                 View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_prop_dialog, null);
                 final AutoCompleteTextView choosepropdialogactv = view.findViewById(R.id.propinputactv);
+                choosepropdialogactv.setText(prop_textview.getText());
                 ArrayAdapter<String> choosepropdialogactvAdapter =
                         new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_props);
                 choosepropdialogactv.setAdapter(choosepropdialogactvAdapter);
@@ -243,6 +249,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         change_pattern_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view2) {
+                String[] pattern_textview_split = {"","3"};
+                make_toast(pattern_textview.getText().toString());
+                if (pattern_textview.getText().toString().contains(" / objs:")){
+                    pattern_textview_split  =pattern_textview.getText().toString().split(" / objs:");
+                }
                 final View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_pattern_dialog, null);
                 choose_pattern_dialog_actv = view.findViewById(R.id.patterninputactv);
                 ArrayAdapter<String> choose_pattern_dialog_actvAdapter =
@@ -250,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 choose_pattern_dialog_actv.setAdapter(choose_pattern_dialog_actvAdapter);
                 choose_pattern_dialog_actv.setThreshold(0);//this is number of letters that must match for autocomplete
                 choose_pattern_dialog_actv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                choose_pattern_dialog_actv.setText(pattern_textview_split[0]);
                 choose_pattern_dialog_actv.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -260,6 +272,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 ArrayAdapter<Integer> choose_number_spinnerAdapter =
                         new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_numbers);
                 choose_number_spinner.setAdapter(choose_number_spinnerAdapter);
+                choose_number_spinner.setSelection(choose_number_spinnerAdapter.getPosition
+                        (Integer.parseInt(pattern_textview_split[1])));
                 choose_number_spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                     @Override
                     public void onItemSelected(AdapterView<?> parent, View view2, int position, long id) {
@@ -271,6 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         choose_pattern_dialog_actv.setAdapter(adapter);
                         choose_pattern_dialog_actv.setThreshold(0);//this is number of letters that must match for autocomplete
                         choose_pattern_dialog_actv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+
                         choose_pattern_dialog_actv.setOnClickListener(new OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -445,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
+        final Button cancelbutton = findViewById(R.id.cancelbutton);
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
@@ -470,6 +486,14 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     if (can_begin_run) {
                         begin_run();
                     }
+                }
+            }
+        });
+        cancelbutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (inRun) {
+                    cancel_run();
                 }
             }
         });
@@ -515,6 +539,47 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return super.onOptionsItemSelected(item);
     }
+    public void set_widgets_visibility(String widgets_to_make_visible){
+        final Button startbutton = findViewById(R.id.startbutton);
+        final Button catchbutton = findViewById(R.id.catchbutton);
+        final Button dropbutton = findViewById(R.id.dropbutton);
+        final Button cancelbutton = findViewById(R.id.cancelbutton);
+        final TextView timertext = findViewById(R.id.timertext);
+        startbutton.setVisibility(View.GONE);
+        dropbutton.setVisibility(View.GONE);
+        catchbutton.setVisibility(View.GONE);
+        cancelbutton.setVisibility(View.GONE);
+        timertext.setVisibility(View.GONE);
+        graph.setVisibility(View.GONE);
+        if (widgets_to_make_visible == "run"){
+            startbutton.setVisibility(View.VISIBLE);
+            timertext.setVisibility(View.VISIBLE);
+            dropbutton.setVisibility(View.GONE);
+            catchbutton.setVisibility(View.GONE);
+            cancelbutton.setVisibility(View.GONE);
+        }
+        if (widgets_to_make_visible == "graph"){
+            graph.setVisibility(View.VISIBLE);
+        }
+        if (widgets_to_make_visible == "history"){
+
+        }
+    }
+
+    public void cancel_run(){
+        timer.cancel();
+        timer.purge();
+        inRun = false;
+        timertext.setText(myFh.formatSeconds(0));
+        final Button startbutton = findViewById(R.id.startbutton);
+        final Button catchbutton = findViewById(R.id.catchbutton);
+        final Button dropbutton = findViewById(R.id.dropbutton);
+        final Button cancelbutton = findViewById(R.id.cancelbutton);
+        startbutton.setVisibility(View.VISIBLE);
+        dropbutton.setVisibility(View.GONE);
+        catchbutton.setVisibility(View.GONE);
+        cancelbutton.setVisibility(View.GONE);
+    }
     public void openbegindialog(){
         inRun = true;
     }
@@ -540,6 +605,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void update_graph(){
         double longest_runs_seconds = 0;
 
+        //graph.removeAllSeries();
         //make_toast("spprop :"+specifics_prop);
         //make_toast("txt :"+prop_textview.getText().toString());
         ArrayList<String> list_of_durations = myDb.getDurationsFromSpecifics(specifics_pattern,specifics_number,
@@ -763,9 +829,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
+        final Button cancelbutton = findViewById(R.id.cancelbutton);
         startbutton.setVisibility(View.GONE);
         dropbutton.setVisibility(View.VISIBLE);
         catchbutton.setVisibility(View.VISIBLE);
+        cancelbutton.setVisibility(View.VISIBLE);
         start_timer();
         inRun = true;
         set_current_volume();
@@ -774,10 +842,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
         final Button dropbutton = findViewById(R.id.dropbutton);
+        final Button cancelbutton = findViewById(R.id.cancelbutton);
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
+        cancelbutton.setVisibility(View.GONE);
         set_current_volume();
         timer.cancel();
         timer.purge();
@@ -834,11 +904,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 }
 /*
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
-
+Next:
+    make modifier and special throw be filled automatically based on whats selected just like prop and pattern is
+        modifier should be just like prop, special throw should be similar to pattern since it needs split
 Button stuff:
     -Make fade touch bar for amount of time after drop or catch
-    -Buttons involved in runs should show/hide, not get pushed down
-    -Need a cancel button for during runs
 Misc:
     -Make specifics be in the popups what is currently selected in main specifics area
     -Create a kotlin file in brunn just to learn how
@@ -857,6 +927,14 @@ Thoughts:
     -set by user in settings
 -a sound played when a run starts would get rid of the problem of runs accidentally being started and stopped in the background
 -once db is installed:
+
+-graph:
+    -could show:
+        -personal bests / time (only ever increases, since personal best doesnt increase. straight lines over long period means no record broken)
+        -personal bests / run attempts
+        -every run / time
+        -every run / run attempts
+    -make a red and blue line for drop/catch
 
 -settings:
     -set the sounds for reaching personal bests, eventually sounds that play for customly defined times as well,
