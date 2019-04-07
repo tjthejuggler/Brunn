@@ -62,6 +62,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     String dbName = "brunn.db";
     AutoCompleteTextView choose_pattern_dialog_actv;
     List<String> list_of_list_names = Arrays.asList("proplist", "patternlist", "modifierlist", "specialthrowlist", "specialthrowsequencelist");
+    List<String> list_of_props = new LinkedList<>();
+    List<Integer> list_of_numbers = new LinkedList<>();
+    List<String> list_of_patterns = new LinkedList<>();
+    List<String> list_of_modifiers = new LinkedList<>();
+    List<String> list_of_special_throws = new LinkedList<>();
+    List<String> list_of_special_throw_sequences = new LinkedList<>();
     LineGraphSeries<DataPoint> graphseriescatch;
     LineGraphSeries<DataPoint> graphseriesdrop;
     private GraphView graph;
@@ -86,35 +92,30 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     String specifics_special_throws = "";
     String specifics_special_throws_sequences = "";
     private TextView personal_best_textview;
-    List<String> list_of_props = new LinkedList<>();
-    List<Integer> list_of_numbers = new LinkedList<>();
-    List<String> list_of_patterns = new LinkedList<>();
-    List<String> list_of_modifiers = new LinkedList<>();
-    List<String> list_of_special_throws = new LinkedList<>();
-    List<String> list_of_special_throw_sequences = new LinkedList<>();
+
     private ListView runs_listview;
     private ArrayAdapter<String> runs_listviewadapter;
     private ArrayList<String> runs_arraylist;
     Handler volume_checker = new Handler();
-    int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
+    static final int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
     Runnable runnable;
     private float x1,x2;
-    static final int MIN_DISTANCE = 150;
+    static final int MIN_SWIPE_DISTANCE = 150;
     private int prop_text_viewCycleIndex = 0;
 
     @SuppressLint("ClickableViewAccessibility")
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        myTfh = new TextFileHelper(this);//creates an object from our database class over in DatabaseHelper
+        myTfh = new TextFileHelper(this);
         myFh = new FormatHelper();
-        //fillMaps();
-        prop_textview = findViewById(R.id.proptextview);
         if(first_use_of_app()){
             do_first_use_of_app_stuff();
         }
         on_create_db();
+        set_current_volume();
+        fill_lists_from_text_files();
+        prop_textview = findViewById(R.id.proptextview);
         try {
             prop_textview.setText(myDb.getAllFromColumn("PROP").get(myDb.getAllFromColumn("PROP").size()-1));
             specifics_prop = prop_textview.getText().toString();
@@ -132,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                     x2 = event.getX();
                     float deltaX = x2 - x1;
                     Log.d("TAG", Float.toString(deltaX));
-                    if (deltaX > MIN_DISTANCE){
+                    if (deltaX > MIN_SWIPE_DISTANCE){
                         prop_text_viewCycleIndex++;
                         if (prop_text_viewCycleIndex==list_of_props.size()){
                             prop_text_viewCycleIndex = 0;
@@ -140,7 +141,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         prop_textview.setText(list_of_props.get(prop_text_viewCycleIndex));
                         specifics_prop = list_of_props.get(prop_text_viewCycleIndex);
                     }
-                    if (deltaX < -MIN_DISTANCE){
+                    if (deltaX < -MIN_SWIPE_DISTANCE){
                         prop_text_viewCycleIndex--;
                         if (prop_text_viewCycleIndex<0){
                             prop_text_viewCycleIndex = list_of_props.size()-1;
@@ -153,17 +154,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 return true;
             }
         });
-
         pattern_textview = findViewById(R.id.patterntextview);
         modifier_textview = findViewById(R.id.modifiertextview);
         special_throw_textview = findViewById(R.id.specialthrowtextview);
         personal_best_textview = findViewById(R.id.personalbesttextview);
-
-        set_current_volume();
         graph = findViewById(R.id.historygraph);
         timertext = findViewById(R.id.timertext);
-        fill_lists_from_text_files();
-
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         FloatingActionButton fab = findViewById(R.id.fab);
@@ -172,9 +168,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view) {
                 make_toast("fab");
                 import_db();
-
-                //do_first_use_of_app_stuff();
-
                 //do_first_use_of_app_stuff();
                 //myTfh.appendTextFile(get_file_output_append_stream("patternlist"),"mytest2");
             }
@@ -186,7 +179,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 RadioButton rb=(RadioButton)findViewById(checkedId);
                 if (!inRun) {
                     run_is_selected = graph_is_selected = history_is_selected = false;
-
                     if (rb.getText().toString().equals("Run")) {
                         set_widgets_visibility("run");
                         run_is_selected = true;
@@ -236,7 +228,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                     myTfh.appendTextFile(get_file_output_append_stream("proplist"),userInput);
                                     list_of_props.add(userInput);
                                 }
-
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
@@ -657,14 +648,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     public void on_create_db(){
         File file = this.getDatabasePath(dbName);
-        if (!file.exists()) {
+        if (!file.exists()) { //If there are no issues then we can remove the comme ted line and reduce this function
             Log.d("didntexist", "5");
-            //if the db doesn't currently exist, then this is the first time the app has been run and we need to add
-            //      the stuff to the db to make the default settings
-            myDb = new DatabaseHelper(this);//creates an object from our db class over in DatabaseHelper
+            myDb = new DatabaseHelper(this);
             //addFirstTimeRunDatabaseData();
         } else {
-            myDb = new DatabaseHelper(this);//creates an object from our database class over in DatabaseHelper
+            myDb = new DatabaseHelper(this);
         }
     }
 
@@ -817,7 +806,9 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         volume_checker.removeCallbacks(runnable); //stop handler when activity not visible
         super.onPause();
     }
-    public void set_current_volume(){
+    public void set_current_volume(){ //the reason we are keeping track of the current volume is that
+        //  we will be checking later to see if the volume has changed and using that change to start/stop runs.
+        //  volume UP = run ended with CATCH, DOWN = DROP. Either button starts runs.
         AudioManager audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         currentVolume = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
     }
