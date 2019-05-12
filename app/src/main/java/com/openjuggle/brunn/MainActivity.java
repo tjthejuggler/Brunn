@@ -331,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view2) {
                 View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_modifier_dialog, null);
                 final MultiAutoCompleteTextView choosemodifierdialogactv = view.findViewById(R.id.modifierinputmactv);
+                choosemodifierdialogactv.setText(modifier_textview.getText());
                 ArrayAdapter<String> choosemodifierdialogactvAdapter =
                         new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_modifiers);
                 choosemodifierdialogactv.setAdapter(choosemodifierdialogactvAdapter);
@@ -386,12 +387,27 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             public void onClick(View view2) {
                 View view = (LayoutInflater.from(MainActivity.this)).inflate(R.layout.choose_special_throw_dialog, null);
                 final MultiAutoCompleteTextView choosespecialthrowdialogmactv = view.findViewById(R.id.specialthrowinputmactv);
+                String[] special_throw_textview_split = new String[2];
+                special_throw_textview_split[0] = "";
+                special_throw_textview_split[1] = "";
+                Log.d("special", special_throw_textview.getText().toString());
+                if (special_throw_textview.getText().toString().contains("/")){
+                    if (special_throw_textview.getText().toString().split("/").length>0) {
+                        special_throw_textview_split[0] = special_throw_textview.getText().toString().split("/")[0];
+                    }
+                    if (special_throw_textview.getText().toString().split("/").length>1) {
+                        special_throw_textview_split[1] = special_throw_textview.getText().toString().split("/")[1];
+                    }
+
+                }
+
                 ArrayAdapter<String> choosespecialthrowdialogactvAdapter =
                         new ArrayAdapter<>(MainActivity.this, android.R.layout.select_dialog_item, list_of_special_throws);
                 choosespecialthrowdialogmactv.setAdapter(choosespecialthrowdialogactvAdapter);
                 choosespecialthrowdialogmactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 choosespecialthrowdialogmactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
                 choosespecialthrowdialogmactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                choosespecialthrowdialogmactv.setText(special_throw_textview_split[0]);
                 choosespecialthrowdialogmactv.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -405,6 +421,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 specialthrowsequenceinputmactv.setThreshold(0);//this is number of letters that must match for autocomplete
                 specialthrowsequenceinputmactv.setTokenizer(new MultiAutoCompleteTextView.CommaTokenizer());
                 specialthrowsequenceinputmactv.setDropDownHeight(Resources.getSystem().getDisplayMetrics().heightPixels / 4);
+                specialthrowsequenceinputmactv.setText(special_throw_textview_split[1]);
                 specialthrowsequenceinputmactv.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -523,6 +540,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             make_toast("settings clicked");
         if (myDb.exportDatabase(getPackageName(), MainActivity.this) == false){
                     show_give_permission_dialog();
+                    //todo EXPORT AS CSV instead or with DB
                 }
             //if (myDb.importDatabase(getPackageName(), MainActivity.this) == false) show_give_permission_dialog();
             //do_first_use_of_app_stuff();
@@ -897,8 +915,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 making sure i can push from this comp
 //Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
 Next:
-    make modifier and special throw be filled automatically based on whats selected just like prop and pattern is
-        modifier should be just like prop, special throw should be similar to pattern since it needs split
+
 Button stuff:
     -Make fade touch bar for amount of time after drop or catch
 Misc:

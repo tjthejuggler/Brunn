@@ -45,7 +45,6 @@ public class TextFileHelper extends AppCompatActivity {
         //mActivity.fillListsFromTextFiles();
     }
    public void resetuserslistfromtemplate(InputStream ins, FileOutputStream fileout,String listName){
-
         Log.d("myTfh", "resetuserslistfromtemplate");
         final int READ_BLOCK_SIZE = 100;
         try {
