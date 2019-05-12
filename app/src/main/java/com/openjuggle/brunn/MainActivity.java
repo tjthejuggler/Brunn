@@ -97,6 +97,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     private ArrayAdapter<String> session_runs_listview_adapter;
     private ArrayList<String> session_runs_arraylist;
 
+    private ListView history_runs_listview;
+    private ArrayAdapter<String> history_runs_listview_adapter;
+    private ArrayList<String> history_runs_arraylist;
+
     Handler volume_checker = new Handler();
     static final int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
     Runnable runnable;
@@ -188,6 +192,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                         graph_is_selected = true;
                     } else if (rb.getText().toString().equals("History")) {
                         set_widgets_visibility("history");
+                        updateHistoryRunList();
                         history_is_selected = true;
                     }
                 }else{
@@ -318,6 +323,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                                     myTfh.appendTextFile(get_file_output_append_stream("patternlist"),userInput);
                                     list_of_patterns.add(userInput);
                                 }
+                                updateHistoryRunList();
                             }
                         });
                 final Dialog dialog = alertBuilder.create();
@@ -481,10 +487,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
-        session_runs_listview = (ListView) findViewById(R.id.runslistview);
+
+        session_runs_listview = (ListView) findViewById(R.id.sessionrunslistview);
         session_runs_arraylist = new ArrayList<>();
         session_runs_listview_adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, session_runs_arraylist);
         session_runs_listview.setAdapter(session_runs_listview_adapter);
+
+        history_runs_listview = (ListView) findViewById(R.id.historyrunslistview);
+        history_runs_arraylist = new ArrayList<>();
+        history_runs_listview_adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, history_runs_arraylist);
+        history_runs_listview.setAdapter(history_runs_listview_adapter);
+
         startbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -557,6 +570,15 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return super.onOptionsItemSelected(item);
     }
+    public void updateHistoryRunList(){
+
+        ArrayList<String> list_of_runs = myDb.getAllRunsFromSpecifics(specifics_pattern,specifics_number,
+                specifics_prop,specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
+
+        history_runs_arraylist.addAll(list_of_runs);
+        history_runs_listview_adapter.notifyDataSetChanged();
+    }
+
     public void set_widgets_visibility(String widgets_to_make_visible){
         final Button startbutton = findViewById(R.id.startbutton);
         final Button catchbutton = findViewById(R.id.catchbutton);
@@ -569,9 +591,12 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         cancelbutton.setVisibility(View.GONE);
         timertext.setVisibility(View.GONE);
         graph.setVisibility(View.GONE);
+        session_runs_listview.setVisibility(View.GONE);
+        history_runs_listview.setVisibility(View.GONE);
         if (widgets_to_make_visible == "run"){
             startbutton.setVisibility(View.VISIBLE);
             timertext.setVisibility(View.VISIBLE);
+            session_runs_listview.setVisibility(View.VISIBLE);
             dropbutton.setVisibility(View.GONE);
             catchbutton.setVisibility(View.GONE);
             cancelbutton.setVisibility(View.GONE);
@@ -580,7 +605,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             graph.setVisibility(View.VISIBLE);
         }
         if (widgets_to_make_visible == "history"){
-
+            history_runs_listview.setVisibility(View.VISIBLE);
         }
     }
     public void cancel_run(){

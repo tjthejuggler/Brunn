@@ -27,6 +27,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     //when the database name changes here it also must change in MainActivity onCreate()
     //      -in order to actually get rid of an unwanted DB, you must remove the data and cache of the app,
     //              uninstalling and recreating the same DB doesn't work
+    FormatHelper myFh;
     public static final String DATABASE_NAME = "brunn.db";
     public static final String TABLE_NAME = "HISTORY";
 
@@ -112,17 +113,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public ArrayList<String> getDurationsFromSpecifics(String specific_name, String specific_number, String specific_prop,
                                                        String specific_modifier, String specific_special_throws, String specific_throw_sequences) {
-
         ArrayList<String> array_list = new ArrayList<String>();
-
         SQLiteDatabase db = this.getReadableDatabase();
-
-
         Cursor res =  db.rawQuery( "select * from HISTORY WHERE (NAME = '"+specific_name+"'  AND NUMBER = '"+specific_number+
                 "' AND PROP = '"+specific_prop+"' AND MODIFIERS = '"+specific_modifier+
                 "' AND SPECIALTHROWS = '"+specific_special_throws+"' AND SPECIALTHROWSEQUENCES = '"+specific_throw_sequences+"')", null );
         res.moveToFirst();
-
         while(res.isAfterLast() == false){
             array_list.add(res.getString(res.getColumnIndex("DURATION")));
             res.moveToNext();
@@ -132,10 +128,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public String getPersonalBestFromSpecifics(String specific_name, String specific_endtype, String specific_number, String specific_prop,
                                                           String specific_modifier, String specific_special_throws, String specific_throw_sequences) {
-
-
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor res =  db.rawQuery( "select * from HISTORY WHERE (NAME = '"+specific_name+"' AND ENDTYPE = '"+specific_endtype+
                 "' AND NUMBER = '"+specific_number+"' AND PROP = '"+specific_prop+"' AND MODIFIERS = '"+specific_modifier+
                 "' AND SPECIALTHROWS = '"+specific_special_throws+"' AND SPECIALTHROWSEQUENCES = '"+specific_throw_sequences+"')", null );
@@ -151,6 +144,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         return Integer.toString(best_time);
     }
+
+
+    public ArrayList<String> getAllRunsFromSpecifics(String specific_name, String specific_number, String specific_prop,
+                                                       String specific_modifier, String specific_special_throws, String specific_throw_sequences) {
+        ArrayList<String> array_list = new ArrayList<String>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res =  db.rawQuery( "select * from HISTORY WHERE (NAME = '"+specific_name+"'  AND NUMBER = '"+specific_number+
+                "' AND PROP = '"+specific_prop+"' AND MODIFIERS = '"+specific_modifier+
+                "' AND SPECIALTHROWS = '"+specific_special_throws+"' AND SPECIALTHROWSEQUENCES = '"+specific_throw_sequences+"')", null );
+        res.moveToFirst();
+        while(res.isAfterLast() == false){
+            String dateTime = res.getString(res.getColumnIndex("DATE"));
+            String duration = myFh.formatSeconds(Integer.parseInt(res.getString(res.getColumnIndex("DURATION"))));
+            array_list.add(dateTime + " --- " + duration);
+            res.moveToNext();
+        }
+        return array_list;
+    }
+
 
     //THIS WORKS
     public boolean exportDatabase(String packageName, Context context){

@@ -12,6 +12,15 @@
         android:layout_height="wrap_content">
 
 
+        <ListView
+            android:id="@+id/historyrunslistview"
+            android:layout_width="395dp"
+            android:layout_height="264dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/cancelbutton" />
+
         <TextView
             android:id="@+id/timertext"
             android:layout_width="wrap_content"
@@ -24,7 +33,7 @@
             app:layout_constraintTop_toBottomOf="@+id/dropbutton" />
 
         <ListView
-            android:id="@+id/runslistview"
+            android:id="@+id/sessionrunslistview"
             android:layout_width="395dp"
             android:layout_height="264dp"
             android:layout_marginLeft="16dp"
