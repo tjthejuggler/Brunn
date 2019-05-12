@@ -93,9 +93,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     String specifics_special_throws_sequences = "";
     private TextView personal_best_textview;
 
-    private ListView runs_listview;
-    private ArrayAdapter<String> runs_listviewadapter;
-    private ArrayList<String> runs_arraylist;
+    private ListView session_runs_listview;
+    private ArrayAdapter<String> session_runs_listview_adapter;
+    private ArrayList<String> session_runs_arraylist;
+
     Handler volume_checker = new Handler();
     static final int delay = 300; //1 second=1000 millisecond, 15*1000=15seconds
     Runnable runnable;
@@ -444,11 +445,19 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 String userInput = choosespecialthrowdialogmactv.getText().toString();
+                                Log.d("userInput1", userInput);
+                                if (Character.toString(userInput.charAt(userInput.length()-2)).equals(",")){
+                                    userInput = userInput.substring(0, userInput.length()-2);
+                                    Log.d("userInput2", userInput);
+                                }
                                 if (!list_of_special_throws.contains(userInput)){
                                     myTfh.appendTextFile(get_file_output_append_stream("specialthrowlist"),userInput);
                                     list_of_special_throws.add(userInput);
                                 }
                                 String specialThrowSequenceUserInput = specialthrowsequenceinputmactv.getText().toString();
+                                if (Character.toString(specialThrowSequenceUserInput.charAt(specialThrowSequenceUserInput.length()-2)).equals(",")){
+                                    specialThrowSequenceUserInput = specialThrowSequenceUserInput.substring(0, specialThrowSequenceUserInput.length()-2);
+                                }
                                 if (!list_of_special_throw_sequences.contains(specialThrowSequenceUserInput)){
                                     myTfh.appendTextFile(get_file_output_append_stream("specialthrowsequencelist"),specialThrowSequenceUserInput);
                                     list_of_special_throw_sequences.add(userInput);
@@ -472,10 +481,10 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         startbutton.setVisibility(View.VISIBLE);
         dropbutton.setVisibility(View.GONE);
         catchbutton.setVisibility(View.GONE);
-        runs_listview = (ListView) findViewById(R.id.runslistview);
-        runs_arraylist = new ArrayList<>();
-        runs_listviewadapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, runs_arraylist);
-        runs_listview.setAdapter(runs_listviewadapter);
+        session_runs_listview = (ListView) findViewById(R.id.runslistview);
+        session_runs_arraylist = new ArrayList<>();
+        session_runs_listview_adapter = new ArrayAdapter<>(getApplicationContext(), android.R.layout.simple_spinner_item, session_runs_arraylist);
+        session_runs_listview.setAdapter(session_runs_listview_adapter);
         startbutton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -574,7 +583,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
         }
     }
-
     public void cancel_run(){
         timer.cancel();
         timer.purge();
@@ -601,7 +609,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
     public void make_toast(String toastMessage){
         Toast.makeText(getBaseContext(), toastMessage,Toast.LENGTH_SHORT).show();
     }
-
     public void specifics_changed(){
         make_toast("specifics_changed");
         //if (there_are_completed_runs_not_yet_added_to_db) {
@@ -610,7 +617,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         update_personal_best_textview();
         update_graph();
     }
-
     public void update_graph(){
         double longest_runs_seconds = 0;
 
@@ -640,8 +646,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         graph.addSeries(graphseriescatch);
 
     }
-
-
     public void update_personal_best_textview(){
         String catch_pb = myDb.getPersonalBestFromSpecifics(specifics_pattern,"catch",specifics_number,
                 specifics_prop,specifics_modifiers,specifics_special_throws, specifics_special_throws_sequences);
@@ -651,8 +655,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
         personal_best_textview.setText("Personal Best - Catch: "+myFh.formatSeconds(Integer.parseInt(catch_pb))+"  Drop: "+myFh.formatSeconds(Integer.parseInt(drop_pb)));
     }
-
-
     public boolean first_use_of_app(){
         Boolean toReturn = false;
         try {
@@ -663,7 +665,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return toReturn;
     }
-
     public void on_create_db(){
         File file = this.getDatabasePath(dbName);
         if (!file.exists()) { //If there are no issues then we can remove the comme ted line and reduce this function
@@ -674,13 +675,11 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
             myDb = new DatabaseHelper(this);
         }
     }
-
     public void import_db(){
         if (myDb.importDatabase(getPackageName(), MainActivity.this) == false){
             show_give_permission_dialog();
         }
     }
-
     public void remove_siteswaps_of_other_numbers(int objectNumber){
         Log.d("TAG", "list_of_patterns.size"+list_of_patterns.size());
         list_of_patterns = myTfh.fillListFromTextFile(get_file_input_stream("patternlist"));
@@ -725,7 +724,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return ins;
     }
-
     public FileOutputStream get_file_output_stream(String listName){
         FileOutputStream fileout = null;
         try {
@@ -744,7 +742,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         }
         return fileout;
     }
-
     public void do_first_use_of_app_stuff() {
         make_toast("do_first_use_of_app_stuff()");
         myTfh.resetuserslistfromtemplate(get_input_stream("proplist"), get_file_output_stream("proplist"), "proplist");
@@ -778,7 +775,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
                 })
                 .show();
     }
-
     public void fill_lists_from_text_files(){
         list_of_numbers.clear();
         for (int i = 1; i <= 13; i++) {
@@ -796,7 +792,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         //      the EditTexts from above which were taken from our Layout
         boolean isInserted = myDb.insertData(table, col, textToAdd);
     }
-
     @Override
     protected void onResume() {
         // start handler as activity become visible
@@ -861,9 +856,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         timer.cancel();
         timer.purge();
         inRun = false;
-        runs_arraylist.add(myFh.formatSeconds(run_duration)+" ("+endtype+")");
-
-        runs_listviewadapter.notifyDataSetChanged();
+        session_runs_arraylist.add(pattern_textview.getText().toString().replace("objs:","")+" - "+ myFh.formatSeconds(run_duration)+" ("+endtype+")");
+        session_runs_listview_adapter.notifyDataSetChanged();
         add_completed_run_to_db(endtype);
         //there_are_completed_runs_not_yet_added_to_db = true;
         timertext.setText(myFh.formatSeconds(0));
@@ -909,243 +903,6 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         };
         timer.scheduleAtFixedRate(timerTask, 0, 1000);
     }
-
 }
-/*
-making sure i can push from this comp
-//Toast.makeText(getBaseContext(), "A Toast to be used!",Toast.LENGTH_SHORT).show();
-Next:
 
-Button stuff:
-    -Make fade touch bar for amount of time after drop or catch
-Misc:
-    -Make specifics be in the popups what is currently selected in main specifics area
-    -Create a kotlin file in brunn just to learn how
-    -radiobutton should update the full history list or the graph(whichever is selected)
-    -short history should be shown with the button for the runs
-    -short history should get reset when specifics change
-Thoughts:
--Even with no camera it could predict my drops with some accuracy just from my previous run info
--NEXT:
-    make the settings activity(look at the settings section below for content inspiration)
--beyond basics DB stuff we want:
-    -make easy way to input records in the past
--possible mail button uses
-    -update db
-    -ai coach(recommends patterns)
-    -set by user in settings
--a sound played when a run starts would get rid of the problem of runs accidentally being started and stopped in the background
--once db is installed:
-
--graph:
-    -could show:
-        -personal bests / time (only ever increases, since personal best doesnt increase. straight lines over long period means no record broken)
-        -personal bests / run attempts
-        -every run / time
-        -every run / run attempts
-    -make a red and blue line for drop/catch
-
--settings:
-    -set the sounds for reaching personal bests, eventually sounds that play for customly defined times as well,
-        like a goal time, or twice current personalbest(this could also just be in goal time if we use 'pbc' to mean personal best catch and do pbc*2
-    -make another screen show when settings is clicked
-    -buffer time
-    -make sounds? set sounds?
-    -make import/export db stuff
--eventually
-    -maybe we will want to distiguish between intentional endings with drop, intentional with catch, unintentional with drop, unintentional with catch
-    -make letters work for siteswaps
-    -there can be an 'only show patterns/modifiers without history checkbox
-    -swipping on number instead of it being a spinner(in the pattern dialog)
-    -swipping on pattern/mod/st could automatically go through whatever list is currently
-            set in the dialog. THIS MEANS THAT WE NEED TO KEEP TRACK OF EVERYTHING THAT IS CURRENTLY SET
-            IN DIALOGS. We should autoload that stuff into dialogs when they open.
-    -make graphs of progress
-    -use calendar view to go back in time(maybe this could also be used to add past runs
-    -an automatic throw count estimator for patterns that have had both time and throw data given
-    -maybe make an 'upload runs to db' button
--Things I don't understand
-    -static
--AI coach thoughts:
-    -look into different kinds of Machine learning algorithms
-    -we can get numbers by doing things like 'number of seconds since a run', 'number of seconds since a run with these specifics',
-        'time since a personal best was broken'
-    -even something simple without machine learning may be useful just to utilize a randomizer (look into interleaving)
-        https://cnewmanblog.wordpress.com/2014/08/17/interleaving-and-variation/
-        look into: shea and morgan experiment
-    -go through formic ai coach thoughts
-    -a possible way to use the FAB would be for ai coach to be customizable with a fab longhold, a with a normal tap it just fills in new specifics
--AI coach thoughts (needs sorted)
-      -Ai coach creates a session based on a certain amount of time and guesses as to how long endurances/drills will take
-      -By showing ai assistant,coach,university (where new coaches can be selected and essentiallyy created),
-          maybe we can keep ppl motivated to use the app more. I think some sort of partially showing them
-            what is eventually available is good, maybe use a dialog to hide stuff, but some is revealed
-    //AI assistant:-------------------------------------------------------
-    //  -it is not quite a coach, but it could help pick modifier/pattern combos that have not been done in awhile and thus
-    //      are likely to be able to have a new personal best set.
-    //  -it could randomly pick a modifier/pattern combo
-    //      -in order to avoid picking multiple special throw sequence modifiers that are the same, we should probably use the
-    //          '-' symbol to prevent it from doing so
-    //      -maybe this means that stuff like 'listen' should also use a '-' so that we could use things like listen-silence, listen-music...
-    //  -i don't know if we would need it or not if we just use the '-' system, but maybe we would want a way to say never use certain
-    //      modifiers to be used together.
-
-        //EVENTUAL 'AI COACH' STUFF
-    //       -(patterns/Modifiers could have some sort of priority ratings so that certain things could
-    //               be focused on, and other patterns/Modifiers could be put on hold for now, but not deleted
-    //               from the DB list
-    //       -maybe some sort of 'trick difficulty' could be determined by the length of the drills/records for that trick
-    //                  not sure if this would be useful or not
-    //  -there could be a 'ai decides pattern/Modifiers' button
-    //          -even if the ai isn't too smart, just having a random pattern chosen might be nice
-    //          -it could have a few response buttons as well, such as:
-    //                  -never recommend this exact pattern/Modifiers combo again
-    //                  -never recommend this Modifiers combo again
-    //                  -give me a new recommendation for now(this option may be redundant to just clicking
-    //                          the original 'ai recommend' button
-    //                  -Formic could tell the user to stop to take the responsibilty
-    //                               away from the user. one less thing to worry about.
-    //  -the ai could sometimes tell the user what their personal best is for a pattern, and sometimes not, and sometimes
-    //              it could lie about what their personal best is. The user could know that it sometimes lies.
-        //  -AI COACH THOUGHTS:-------------------------------------------------------
-    //  -There could be something set up so that the user must do a certain number of runs before they unlock AI assistant
-    //      or AI Coach
-    //  -There could be an ai coach tab where you create ai coaches. Each table holding the historys should hold the ai
-    //      brains as well so that when historys get uploaded and shared, the coach responsible can also be shared.
-    //  -There should be a coach that is just 'Pick a random similar pattern', and one that is the same but increasing
-    //      or decreasing in difficulty (so we need a difficulty rating).
-    //  -Coaches should have a list of patterns they have access to.
-    //  -A version without ai coach should be packaged together and offered around online. Maybe it should have an 'Ai
-    //      coach comming soon' message on another tab.
-    //  -Only 1 coach at a time or multiple?
-    //      -i think only 1 because we want to be able to more clearly see the affect of a coach over time.
-    //IDEAS ON HOW TO INTRODUCE AI:------------------------------------------------
-    //  -after the user has used the basic app for a certain amount of time/usage, they unlock access to the ai assistant
-    //  -after a certain amount of time/usage with that, they unlock access to a pre-defined AI coach
-    //      -by using a pre-defined, they can try one that I think is decent, and I can get results from the AI coaches performance.
-    //         Whenever I want to, I can switch this AI coach out with other AI coaches to test different things out.
-    //  -after a certain amount of time with a pre-defined AI coach, the user becomes able to:(here are some different possible ideas)
-    //      -choose from a selection of AI coaches
-    //      -define a simple AI coach with slide bars
-    //      -define a complex AI coach with slide bars
-    //  -the results of different AI coaches should be able to be viewed by anyone
-    //  -AI coaches made by users could be put up with their track record, and able to be selected by other users
-    //      -maybe a sort of currency could even be created so that by using coaches for a certain amount of time, you can the ability
-    //          to create/use other coaches
-    
-
-
-FORMIC NOTES:
-    *GET FROM OTHER COMPUTER*
-    * Unrelated, just testing github on new computer, this is from the ususal one
-    * this push is from the new computer
-    * *and a push back
-    * and another push back
-
-------MOST IMPORTANT REQUIREMENTS-------------
-        As few app pages as possible
-        Main Screen
-        POPUP: ability to select pattern from filterable list
-        POPUP: ability to select modifier(s) - this could also be a filterable list
-        Settings
-        Voice activated (start, drop, catch) if it is reliable, as well as more commands if reliable
-        The ability to use the app quickly, no long loading times
-        This may mean that we don't interact with the DB so often, maybe just to update it when the session is ending.
-        All attempts recorded.
-        I can quickly restart a run.
-
-
-        ------POSSIBLE REQUIREMENTS-----------
-        I can always see the screen, no need to pick up phone. It is on a big screen or projector in front of me.
-        - a way to tag patterns as being currently interested in them, maybe favorited, disliked, other tags
-        -a stat that would be interesting is the % of patterns that have intentional records greater than unintentional
-        -occasionally having sessions where I always go to failure would be good for seeing just how far I can go on a pattern
-        -maybe nfc tags could be used in 1 or 2 shoes, or on balls if barefooted to indicate that a timer should start or stop, or a run should be repeated
-        -it would be cool to have some sort of drawing option for patterns so I can show exactly where balls are going, for instance there is a whole family of patterns for the box, that back and forth ball can go above, around in figure eights, loop one of the column balls.
-        -pick the prop when app opens just like I was picking a username and it wont have to load stuff from other props I'm not using
-        -it would be nice if a voice told me the next siteswap to do
-        -practice routines could be created by using just a couple siteswap numbers with 0s and 2s sprinkled in, for example 6, 1: 612, 61120, 6211,66661.they could make different shapes based on difficulty. By this I mean things like a hill, starts with low difficulty, goes to high difficulty, and then returns to low. Or an inverse hill, or an s shape, or a (hill, mountain, hill)
-        -newly input siteswaps should be added as their equivalent with the highest digit listed first, so 03057 should be 70305. This idea should continue onto the second digit in the case of times, 52053 should be 53520 (btw, that's not a valid siteswap)
-        -there should be no inputting of new siteswaps, just start a run with one by putting it in and it 'adds' it
-
-
-        --------OBSERVATIONS-----------
-        Just finding out an average or normal endurance records for a given number of consecutive attempts would be nice.
-        It may be fairly standard that first attempt is low, next is higher, next even higher, and from there attempts
-
-        -----THOUGHTS------
-        Ideal setup:
-        User inputs as much or as little info on what they want to practice, app tells them what to do and shows them a juggling animation of it being done, they do it, the app notes how long they do it for and how it ends, gives stats on pattern form, identifies mistakes, records video of attempt.
-
-        ------AI COACH THOUGHTS----------
-        -initially, coach doesnt even need to be real ai, it can just be recommending stuff based on a few simple rules that I create
-        -Juggler could have a 'warmness' rating based on how much they have juggled how recently, the warmer they are, they more difficult of patterns are suggested. Pattern difficulty can be based on the current personal best with that pattern.
-        -a 'tiredness' rating may also be useful so that as patterns get more difficult, the coach can recomend easier patterns again to give the juggler a bit of a break, and they are not pushed into failure. The rate at which this rating changes can be dynamically based on when the juggler starts getting lower runs
-        -Some concept of 'themes' would be nice so that it chooses patterns that build on each other, or uses some less difficult patterns to warm the juggler up to more difficult patterns. It would be great if the patterns always start simple enough and undemanding enough and build gradually enough that long times can go without any drops occurring.
-        -Less time spent juggling is acceptable if the result is more records being broken and less drops happening
-        -hooking up to spotify playlist would be really cool, it could start/stop songs when runs start/stop, it could select songs with lengths based on the current record on the pattern. It could also play around withusing songs consistently with the same patterns. Or it could do similar patterns with songs from the same album or artist, real crazy could be songs with multiple artists after patterns with certain qualities have been used with either of the artists, then patterns that combine aspects with songs that have both artists
-
-
-
-
-        -------BELOW HERE NEEDS SORTED----------
-
-        If it could play songs then it could start them at the right time to end when a record or goal is reached
-
-        Personalized audio could be set as notifications for all kinds of stuff:
-        You beat your unintentional record
-        You beat you intentional record
-        You doubled your intentional record
-        You are X% higher than your intentional record
-        You dont usually make it this much % higher than your intentional record(this needs to be more precise)
-        You have a X% chance of dropping based on your history(needs to be more precise)
-        This would be the X number intentional records beaten this session
-        This session has been an hour long
-
-        Need a way to compare progress recently to progress in the past, independant of personal best lengths. Meaning I want to know if now I am breaking records more often than I use to, and doing so more impressively, like by bigger %s, with less drops, or by any other measure.
-
-        It would be nice to see charts/graphs or pattern progress over time, as well as some of the stats information. There may be an easy way to do this like there was in python
-
-        If it knew a normal average throws per second of a pattern, and also knew beats per minute of songs, it could play songs that match patterns
-
-        There could be a timer for 'im working on/figuring out this pattern' that is separate from endurance time
-
-        'Recomend a pattern to me' would be nice, either of patterns I have done, but not for awhile, patterns I have never done, patterns other people who do the patterns I do can do, maybe more types of recomends.
-
-        So far as special throws go and all their combinations like yny, nny, yynny, yyyyn, and so on, we dont have to input them all, they can be automatically generated and if it offers one that we dont want then we can have some kind of skip button. Maybe to varying degrees, like 'skip and never ask again', 'skip and dont ask again for awhile'
-
-        It should come preloaded with a ton of siteswaps. User should be able to browse all siteswaps, input siteswaps, browse siteswaps that have records.
-
-        User should be able to input catch record or time record, there should also be a simple feature with camera that starts timer when it sees movement so that the camera can be aimed up and juggling can trigger it.
-
-        Patterns that are different if they start on left or right side should have different records
-
-        There should be different training modes, juggler can either decide what to do or be told what to do. If juggler deciding, they can be as specific or vague as desired, for example, choose number of objects, choose siteswap length, choose lowest and highest possible siteswap digits, and probable more stuff
-
-        AI coach could tell juggler to stop, this could be right after the best unintentional record was set, a certain % of time after best intentional record was set(for instance if % is 10, and record is 1 minute, then ai coach tells juggler to stop at 1:06). By using this ai coach it would be cool if we could eliminate drops and keep setting new intentional records. An alternative to this could be juggler is their own coach and the app just tells them when they have gotten to certain markers such as unintentional, intentional, and %s beyond those records. The audio for these could be set by the juggler so they could even record themselves saying the %s
-
-        A nice feature would be the ability to focus on siteswap sequences, like 11. It could suggest 5511, then 711, and then any more siteswaps that include 11
-
-        Default prop type would be nice so accidental records are not made for the wrong prop type
-
-        A strictness rating would be good for things like collisions allowed or accidental body bumps, or wild throws that get recovered from, or foot movements
-
-        A mode like the anki app that just gives little missions with a built in timer would be cool. It tells you a pattern, and an amount of time/catches, you hit start, try to do it, tell it when you stop and if it was a drop/catch
-
-        Some kind of enforced break length between runs may be useful
-
-        The goal of the app is to help juggler break as many records as possible with as little effort possible. The whole ferriss 80% / 20% thing
-
-        New Juggling Database UI:
-        Go over current drawing
-        Make a drawing for each screen. Filter, settings, create set, in set, set history, general stats, pattern stats
-        Before start programming, should know what I want
-
-
-        Eventually:
-        The + sign could give option to make a new set or to start a new AI session that asks for desires and then suggests sets
-
-
-
-*/
 
